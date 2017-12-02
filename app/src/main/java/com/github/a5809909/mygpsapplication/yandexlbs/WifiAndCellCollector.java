@@ -1,24 +1,5 @@
 package com.github.a5809909.mygpsapplication.yandexlbs;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.telephony.CellLocation;
-import android.telephony.NeighboringCellInfo;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
-import android.telephony.gsm.GsmCellLocation;
-import android.util.Log;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -32,30 +13,43 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
-public class WifiAndCellCollector extends PhoneStateListener implements Runnable, LocationListener {
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.telephony.CellLocation;
+import android.telephony.NeighboringCellInfo;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
+import android.telephony.gsm.GsmCellLocation;
 
+public class WifiAndCellCollector extends PhoneStateListener implements Runnable, LocationListener {
+    
     private static final String[] lbsPostName = new String[]{"xml"};
     private static final String[] lbsContentType = new String[]{"xml"};
-
+    
     private static final String[] wifipoolPostName = new String[]{"data"};
     private static final String[] wifipoolContentType = new String[]{"xml"};
     private static final String[] wifipoolContentTypeGzipped = new String[]{"xml/gzip"};
-
+    
     public static final String PROTOCOL_VERSION = "1.0";
     public static final String API_KEY = "AIvQHVoBAAAAdhDDPQMAsE3v4yl-GtvM_p2mMfn9qdLurB4AAAAAAAAAAAB0XwzE9oAoNO3YU6Fo2DofJZan4A==";
 
     public static final String LBS_API_HOST = "http://api.lbs.yandex.net/geolocation";
     public static final String WIFIPOOL_HOST = "http://api.lbs.yandex.net/partners/wifipool?";
-
+    
     public static final String GSM = "gsm";
     public static final String CDMA = "cdma";
-
+    
     private static final long COLLECTION_TIMEOUT = 30000;
     private static final long WIFI_SCAN_TIMEOUT = 30000;
     private static final long GPS_SCAN_TIMEOUT = 2000;
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
     private static final long SEND_TIMEOUT = 30000;
-    private static final int MY_PERMISSIONS_ACCESS_COARSE_LOCATION=0;
 
     private Context context;
     private LbsLocationListener listener;
@@ -63,31 +57,30 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
     private ArrayList<String> wifipoolChunks;
     private SimpleDateFormat formatter;
     private TelephonyManager tm;
-
+    
     private String radioType;
     private String networkType;
     private String mcc;
     private String mnc;
     private List<CellInfo> cellInfos;
     private int cellId, lac, signalStrength;
-
+    
     private WifiManager wifi;
     private long lastWifiScanTime;
     private List<WifiInfo> wifiInfos;
-
+    
     private volatile Location lastGpsFix;
     private volatile long lastGpsFixTime;
     private long lastSendDataTime;
-
+    
     private String manufacturer;
     private String model;
-
+    
     private volatile boolean isRun;
-
-    public static Map<Integer, String> networkTypeStr;
-
+    
+    public static Map<Integer,String> networkTypeStr;
     static {
-        networkTypeStr = new HashMap<Integer, String>();
+        networkTypeStr = new HashMap<Integer,String>();
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_GPRS, "GPRS");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_EDGE, "EDGE");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UMTS, "UMTS");
@@ -101,7 +94,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_IDEN, "IDEN");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UNKNOWN, "UNKNOWN");
     }
-
+    
     public WifiAndCellCollector(Context context, LbsLocationListener listener, String uuid) {
         this.listener = listener;
         this.context = context;
@@ -119,7 +112,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
                 mcc = mnc = null;
             }
         }
-
+        
         try {
             model = new String(encodeUrl(Build.MODEL.getBytes("UTF-8")));
         } catch (UnsupportedEncodingException e) {
@@ -130,67 +123,27 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         } catch (UnsupportedEncodingException e) {
             manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes()));
         }
-
+        
         formatter = new SimpleDateFormat("ddMMyyyy:HHmmss");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
+        
         wifipoolChunks = new ArrayList<String>();
         wifiInfos = new ArrayList<WifiInfo>();
         wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         lastWifiScanTime = 0;
         lastSendDataTime = System.currentTimeMillis();
     }
-
+    
     public void startCollect() {
-        requestPermissions(context);
         isRun = true;
         if (tm != null) {
             tm.listen(this, PhoneStateListener.LISTEN_SIGNAL_STRENGTH | PhoneStateListener.LISTEN_CELL_LOCATION | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE);
         }
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_SCAN_TIMEOUT, 1, this);
         (new Thread(this)).start();
     }
-
-    private static void requestPermissions(Context context) {
-        // Here, thisActivity is the current activity
-        if (ContextCompat.checkSelfPermission(context,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(context,
-                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(LbsApiActivity,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        MY_PERMISSIONS_ACCESS_COARSE_LOCATION);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-        }
-    }
-
+    
     public void stopCollect() {
         isRun = false;
         if (tm != null) {
@@ -209,17 +162,16 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             sendDataIfNeed();
             try {
                 Thread.sleep(COLLECTION_TIMEOUT);
-            } catch (InterruptedException ie) {
-            }
+            } catch (InterruptedException ie) {}
         }
     }
-
+    
     public void collectWifiInfo() {
         wifiInfos.clear();
         if (wifi != null && wifi.isWifiEnabled()) {
             List<ScanResult> wifiNetworks = wifi.getScanResults();
             if (wifiNetworks != null && wifiNetworks.size() > 0) {
-                for (ScanResult net : wifiNetworks) {
+                for (ScanResult net:wifiNetworks) {
                     WifiInfo info = new WifiInfo();
                     info.mac = net.BSSID.toUpperCase();
                     char[] mac = net.BSSID.toUpperCase().toCharArray();
@@ -237,7 +189,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
                     wifiInfos.add(info);
                 }
             }
-
+            
             long currentTime = System.currentTimeMillis();
             if (lastWifiScanTime > currentTime) {
                 lastWifiScanTime = currentTime;
@@ -247,26 +199,16 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             }
         }
     }
-
+    
     @SuppressWarnings("rawtypes")
     private static final Class[] emptyParamDesc = new Class[]{};
     private static final Object[] emptyParam = new Object[]{};
-
+    
     public void collectCellInfo() {
         if (tm == null) {
             return;
         }
         cellInfos.clear();
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
         List<NeighboringCellInfo> cellList = tm.getNeighboringCellInfo();
         for (NeighboringCellInfo cell : cellList) {
             int cellId = cell.getCid();
@@ -425,14 +367,12 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             if (cellInfos != null && cellInfos.size() > 0) {
                 for (CellInfo info:cellInfos) {
                     xml.append("<cell>");
-                    Log.i("i REached Here","mcc:"+xml);
                     xml.append("<countrycode>").append(mcc).append("</countrycode>");
                     xml.append("<operatorid>").append(mnc).append("</operatorid>");
                     xml.append("<cellid>").append(info.cellId).append("</cellid>");
                     xml.append("<lac>").append(info.lac).append("</lac>");
                     xml.append("<signal_strength>").append(info.signalStrength).append("</signal_strength>");
                     xml.append("</cell>");
-
                 }
             } else {
              // add current connected cell
@@ -460,7 +400,6 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         }
 
         xml.append("</ya_lbs_request>");
-        Log.i("xmlGSM","xml:"+xml);
         return xml.toString();
     }
     
