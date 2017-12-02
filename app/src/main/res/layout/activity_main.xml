@@ -1,16 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+	android:layout_margin="12dp"
     >
-<Button
-	android:id="@+id/btn_do_lbs"
-	android:layout_gravity="center_horizontal"
-	android:layout_width="wrap_content" 
-    android:layout_height="wrap_content"
-    android:text="Do request"
-	/>
+	<LinearLayout
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:paddingRight="50dp">
+		<Button
+			android:id="@+id/btn_do_lbs"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="190dp"
+			android:layout_height="wrap_content"
+			android:text="Do request Yandex"
+			/>
+		<Button
+			android:id="@+id/btn_auth_gps.com"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="190dp"
+			android:layout_height="wrap_content"
+			android:text="Auth GPS-trace.com"
+			/>
+		<Button
+		android:id="@+id/btn_send_gps.com"
+		android:layout_gravity="center_horizontal"
+			android:layout_width="190dp"
+		android:layout_height="wrap_content"
+		android:text="Send message to GPS-trace.com"
+		/>
+		<Button
+			android:id="@+id/btn_maps"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="190dp"
+			android:layout_height="wrap_content"
+			android:text="Show coordinats on Map"
+			/>
+	</LinearLayout>
+	<LinearLayout
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:orientation="vertical">
 <TextView  
     android:layout_width="fill_parent" 
     android:layout_height="wrap_content" 
@@ -36,4 +68,5 @@
     android:layout_height="wrap_content" 
 	android:id = "@+id/lbs_type"
     />
+	</LinearLayout>
 </LinearLayout>
