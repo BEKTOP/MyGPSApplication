@@ -1,18 +1,5 @@
 package com.github.a5809909.mygpsapplication.yandexlbs;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.zip.GZIPOutputStream;
-
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
@@ -26,6 +13,20 @@ import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
+import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.zip.GZIPOutputStream;
 
 public class WifiAndCellCollector extends PhoneStateListener implements Runnable, LocationListener {
     
@@ -457,6 +458,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         xml.append("</cellinfos>");
         
         xml.append("</chunk>");
+        Log.d("LBS","xml = "+xml.toString());
         wifipoolChunks.add(xml.toString());
     }
 

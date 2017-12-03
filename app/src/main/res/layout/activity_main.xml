@@ -18,6 +18,13 @@
 			android:text="Do request Yandex"
 			/>
 		<Button
+			android:id="@+id/btn_show_database"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="190dp"
+			android:layout_height="wrap_content"
+			android:text="Show DataBase"
+			/>
+		<Button
 			android:id="@+id/btn_auth_gps.com"
 			android:layout_gravity="center_horizontal"
 			android:layout_width="190dp"
@@ -37,6 +44,13 @@
 			android:layout_width="190dp"
 			android:layout_height="wrap_content"
 			android:text="Show coordinats on Map"
+			/>
+		<Button
+			android:id="@+id/btn_images"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="190dp"
+			android:layout_height="wrap_content"
+			android:text="Show Images"
 			/>
 	</LinearLayout>
 	<LinearLayout
