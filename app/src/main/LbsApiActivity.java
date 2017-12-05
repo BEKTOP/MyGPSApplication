@@ -40,7 +40,7 @@ public class LbsApiActivity extends Activity implements LbsLocationListener {
             edit.putString("UUID", uuid);
             edit.commit();
         }
-        wifiAndCellCollector = new WifiAndCellCollector(this, this, uuid);
+        wifiAndCellCollector = new WifiAndCellCollector(this);
         
         setContentView(R.layout.activity_main);
         btnDoLbs = (Button) findViewById(R.id.btn_do_lbs);

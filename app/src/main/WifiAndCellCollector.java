@@ -2,10 +2,12 @@ package com.github.a5809909.mygpsapplication.yandexlbs;
 
 import android.content.Context;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.telephony.CellLocation;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneStateListener;
@@ -26,24 +28,24 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
-public class WifiAndCellCollector extends PhoneStateListener implements Runnable {
-
+public class WifiAndCellCollector extends PhoneStateListener implements Runnable, LocationListener {
+    
     private static final String[] lbsPostName = new String[]{"xml"};
     private static final String[] lbsContentType = new String[]{"xml"};
-
+    
     private static final String[] wifipoolPostName = new String[]{"data"};
     private static final String[] wifipoolContentType = new String[]{"xml"};
     private static final String[] wifipoolContentTypeGzipped = new String[]{"xml/gzip"};
-
+    
     public static final String PROTOCOL_VERSION = "1.0";
     public static final String API_KEY = "AIvQHVoBAAAAdhDDPQMAsE3v4yl-GtvM_p2mMfn9qdLurB4AAAAAAAAAAAB0XwzE9oAoNO3YU6Fo2DofJZan4A==";
 
     public static final String LBS_API_HOST = "http://api.lbs.yandex.net/geolocation";
     public static final String WIFIPOOL_HOST = "http://api.lbs.yandex.net/partners/wifipool?";
-
+    
     public static final String GSM = "gsm";
     public static final String CDMA = "cdma";
-
+    
     private static final long COLLECTION_TIMEOUT = 30000;
     private static final long WIFI_SCAN_TIMEOUT = 30000;
     private static final long GPS_SCAN_TIMEOUT = 2000;
@@ -51,31 +53,32 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
     private static final long SEND_TIMEOUT = 30000;
 
     private Context context;
+    private LbsLocationListener listener;
     private String uuid;
     private ArrayList<String> wifipoolChunks;
     private SimpleDateFormat formatter;
     private TelephonyManager tm;
-
+    
     private String radioType;
     private String networkType;
     private String mcc;
     private String mnc;
     private List<CellInfo> cellInfos;
     private int cellId, lac, signalStrength;
-
+    
     private WifiManager wifi;
     private long lastWifiScanTime;
     private List<WifiInfo> wifiInfos;
-
+    
     private volatile Location lastGpsFix;
     private volatile long lastGpsFixTime;
     private long lastSendDataTime;
-
+    
     private String manufacturer;
     private String model;
-
+    
     private volatile boolean isRun;
-
+    
     public static Map<Integer,String> networkTypeStr;
     static {
         networkTypeStr = new HashMap<Integer,String>();
@@ -92,11 +95,11 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_IDEN, "IDEN");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UNKNOWN, "UNKNOWN");
     }
-
-    public WifiAndCellCollector(Context context) {
-   //     this.listener = listener;
+    
+    public WifiAndCellCollector(Context context, LbsLocationListener listener, String uuid) {
+        this.listener = listener;
         this.context = context;
-        this.uuid = "123";
+        this.uuid = uuid;
         tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         if (tm != null) {
             networkType = networkTypeStr.get(tm.getNetworkType());
@@ -110,7 +113,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
                 mcc = mnc = null;
             }
         }
-
+        
         try {
             model = new String(encodeUrl(Build.MODEL.getBytes("UTF-8")));
         } catch (UnsupportedEncodingException e) {
@@ -121,34 +124,34 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         } catch (UnsupportedEncodingException e) {
             manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes()));
         }
-
+        
         formatter = new SimpleDateFormat("ddMMyyyy:HHmmss");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
+        
         wifipoolChunks = new ArrayList<String>();
         wifiInfos = new ArrayList<WifiInfo>();
         wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         lastWifiScanTime = 0;
         lastSendDataTime = System.currentTimeMillis();
     }
-
+    
     public void startCollect() {
         isRun = true;
         if (tm != null) {
             tm.listen(this, PhoneStateListener.LISTEN_SIGNAL_STRENGTH | PhoneStateListener.LISTEN_CELL_LOCATION | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE);
         }
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-     //   locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_SCAN_TIMEOUT, 1, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_SCAN_TIMEOUT, 1, this);
         (new Thread(this)).start();
     }
-
+    
     public void stopCollect() {
         isRun = false;
         if (tm != null) {
             tm.listen(this, PhoneStateListener.LISTEN_NONE);
         }
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-     //   locationManager.removeUpdates(this);
+        locationManager.removeUpdates(this);
     }
 
     @Override
@@ -163,7 +166,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             } catch (InterruptedException ie) {}
         }
     }
-
+    
     public void collectWifiInfo() {
         wifiInfos.clear();
         if (wifi != null && wifi.isWifiEnabled()) {
@@ -187,7 +190,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
                     wifiInfos.add(info);
                 }
             }
-
+            
             long currentTime = System.currentTimeMillis();
             if (lastWifiScanTime > currentTime) {
                 lastWifiScanTime = currentTime;
@@ -197,11 +200,11 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             }
         }
     }
-
+    
     @SuppressWarnings("rawtypes")
     private static final Class[] emptyParamDesc = new Class[]{};
     private static final Object[] emptyParam = new Object[]{};
-
+    
     public void collectCellInfo() {
         if (tm == null) {
             return;
@@ -309,7 +312,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
     public void onSignalStrengthChanged(int asu) {
         signalStrength = -113 + 2 * asu;
     }
-
+    
     @Override
     public void onCellLocationChanged(CellLocation location) {
       if (location != null) {
@@ -320,7 +323,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
           }
       }
     }
-
+    
     // API SDK < 7
     @Override
     public void onDataConnectionStateChanged(int state) {
@@ -333,21 +336,20 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         this.networkType = networkTypeStr.get(networkType);
     }
 
-//    @Override
-//    public void onLocationChanged(Location location) {
-//        lastGpsFixTime = System.currentTimeMillis();
-//        lastGpsFix = location;
-//    }
+    @Override
+    public void onLocationChanged(Location location) {
+        lastGpsFixTime = System.currentTimeMillis();
+        lastGpsFix = location;
+    }
 
-    public LbsInfo requestMyLocation() {
+    public void requestMyLocation() {
         String xmlRequest = generateRequestLbsXml();
         byte[] request = HttpConnector.encodeMIME(lbsPostName, lbsContentType, new byte[][]{xmlRequest.getBytes()});
         byte[] response = HttpConnector.doRequest(LBS_API_HOST, request);
         LbsInfo lbsInfo = LbsInfo.parseByteData(response);
-        return lbsInfo;
-//        if (listener != null) {
-//            listener.onLocationChange(lbsInfo);
-//        }
+        if (listener != null) {
+            listener.onLocationChange(lbsInfo);
+        }
     }
     
     private synchronized String generateRequestLbsXml() {
@@ -594,18 +596,18 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         private String name;
     }
 
-//    @Override
-//    public void onProviderDisabled(String provider) {
-//
-//    }
-//
-//    @Override
-//    public void onProviderEnabled(String provider) {
-//
-//    }
-//
-//    @Override
-//    public void onStatusChanged(String provider, int status, Bundle extras) {
-//
-//    }
+    @Override
+    public void onProviderDisabled(String provider) {
+        
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        
+    }
 }
