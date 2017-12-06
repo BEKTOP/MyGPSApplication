@@ -6,38 +6,36 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by lalit on 9/12/2016.
- */
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Database Version
     private static final int DATABASE_VERSION = 1;
 
     // Database Name
-    private static final String DATABASE_NAME = "UserManager.db";
+    private static final String DATABASE_NAME = "PhoneStateManager.db";
 
     // User table name
-    private static final String TABLE_USER = "user";
+    private static final String TABLE_PHONE_STATE = "phoneState";
 
     // User Table Columns names
-    private static final String COLUMN_USER_ID = "user_id";
-    private static final String COLUMN_USER_NAME = "user_name";
-    private static final String COLUMN_USER_EMAIL = "user_email";
-    private static final String COLUMN_USER_PASSWORD = "user_password";
+    private static final String COLUMN_ID = "_id";
+    private static final String COLUMN_LAC = "lac";
+    private static final String COLUMN_MCC = "mcc";
+    private static final String COLUMN_MNC = "mnc";
 
     // create table sql query
-    private String CREATE_USER_TABLE = "CREATE TABLE " + TABLE_USER + "("
-            + COLUMN_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_USER_NAME + " TEXT,"
-            + COLUMN_USER_EMAIL + " TEXT," + COLUMN_USER_PASSWORD + " TEXT" + ")";
+    private String CREATE_PHONE_STATE_TABLE = "CREATE TABLE " + TABLE_PHONE_STATE + "("
+            + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_LAC + " TEXT,"
+            + COLUMN_MCC + " TEXT," + COLUMN_MNC + " TEXT" + ")";
 
     // drop table sql query
-    private String DROP_USER_TABLE = "DROP TABLE IF EXISTS " + TABLE_USER;
+    private String DROP_PHONE_STATE_TABLE = "DROP TABLE IF EXISTS " + TABLE_PHONE_STATE;
 
     /**
      * Constructor
@@ -50,7 +48,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(CREATE_USER_TABLE);
+        db.execSQL(CREATE_PHONE_STATE_TABLE);
     }
 
 
@@ -58,7 +56,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
         //Drop User Table if exist
-        db.execSQL(DROP_USER_TABLE);
+        db.execSQL(DROP_PHONE_STATE_TABLE);
 
         // Create tables again
         onCreate(db);
@@ -66,50 +64,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     /**
-     * This method is to create user record
+     * This method is to create phoneState record
      *
-     * @param user
+     * @param phoneState
      */
-    public void addUser(User user) {
+    public void addUser(PhoneState phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put(COLUMN_USER_NAME, user.getName());
-        values.put(COLUMN_USER_EMAIL, user.getEmail());
-        values.put(COLUMN_USER_PASSWORD, user.getPassword());
+        values.put(COLUMN_LAC, phoneState.getLac_0());
+        values.put(COLUMN_MCC, phoneState.getMcc());
+        values.put(COLUMN_MNC, phoneState.getMnc());
 
         // Inserting Row
-        db.insert(TABLE_USER, null, values);
+        db.insert(TABLE_PHONE_STATE, null, values);
         db.close();
     }
 
     /**
-     * This method is to fetch all user and return the list of user records
+     * This method is to fetch all phoneState and return the list of phoneState records
      *
      * @return list
      */
-    public List<User> getAllUser() {
+    public List<PhoneState> getAllPhoneStates() {
         // array of columns to fetch
         String[] columns = {
-                COLUMN_USER_ID,
-                COLUMN_USER_EMAIL,
-                COLUMN_USER_NAME,
-                COLUMN_USER_PASSWORD
+                COLUMN_ID,
+                COLUMN_MCC,
+                COLUMN_LAC,
+                COLUMN_MNC
         };
         // sorting orders
         String sortOrder =
-                COLUMN_USER_NAME + " ASC";
-        List<User> userList = new ArrayList<User>();
+                COLUMN_LAC + " ASC";
+        List<PhoneState> phoneStateList = new ArrayList<PhoneState>();
 
         SQLiteDatabase db = this.getReadableDatabase();
 
-        // query the user table
+        // query the phoneState table
         /**
-         * Here query function is used to fetch records from user table this function works like we use sql query.
+         * Here query function is used to fetch records from phoneState table this function works like we use sql query.
          * SQL query equivalent to this query function is
-         * SELECT user_id,user_name,user_email,user_password FROM user ORDER BY user_name;
+         * SELECT phoneState_id,phoneState_name,phoneState_email,phoneState_password FROM phoneState ORDER BY phoneState_name;
          */
-        Cursor cursor = db.query(TABLE_USER, //Table to query
+        Cursor cursor = db.query(TABLE_PHONE_STATE, //Table to query
                 columns,    //columns to return
                 null,        //columns for the WHERE clause
                 null,        //The values for the WHERE clause
@@ -121,140 +119,54 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Traversing through all rows and adding to list
         if (cursor.moveToFirst()) {
             do {
-                User user = new User();
-                user.setId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_USER_ID))));
-                user.setName(cursor.getString(cursor.getColumnIndex(COLUMN_USER_NAME)));
-                user.setEmail(cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)));
-                user.setPassword(cursor.getString(cursor.getColumnIndex(COLUMN_USER_PASSWORD)));
-                // Adding user record to list
-                userList.add(user);
+                PhoneState phoneState = new PhoneState();
+                phoneState.setId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_ID))));
+                phoneState.setLac_0(cursor.getColumnIndex(COLUMN_LAC));
+                phoneState.setMcc(cursor.getString(cursor.getColumnIndex(COLUMN_MCC)));
+                phoneState.setMnc(cursor.getString(cursor.getColumnIndex(COLUMN_MNC)));
+                // Adding phoneState record to list
+                phoneStateList.add(phoneState);
             } while (cursor.moveToNext());
         }
         cursor.close();
         db.close();
 
-        // return user list
-        return userList;
+        // return phoneState list
+        return phoneStateList;
     }
 
     /**
-     * This method to update user record
+     * This method to update phoneState record
      *
-     * @param user
+     * @param phoneState
      */
-    public void updateUser(User user) {
+    public void updateUser(User phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put(COLUMN_USER_NAME, user.getName());
-        values.put(COLUMN_USER_EMAIL, user.getEmail());
-        values.put(COLUMN_USER_PASSWORD, user.getPassword());
+        values.put(COLUMN_LAC, phoneState.getName());
+        values.put(COLUMN_MCC, phoneState.getEmail());
+        values.put(COLUMN_MNC, phoneState.getPassword());
 
         // updating row
-        db.update(TABLE_USER, values, COLUMN_USER_ID + " = ?",
-                new String[]{String.valueOf(user.getId())});
+        db.update(TABLE_PHONE_STATE, values, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(phoneState.getId())});
         db.close();
     }
 
     /**
-     * This method is to delete user record
+     * This method is to delete phoneState record
      *
-     * @param user
+     * @param phoneState
      */
-    public void deleteUser(User user) {
+    public void deletePhoneState(PhoneState phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
-        // delete user record by id
-        db.delete(TABLE_USER, COLUMN_USER_ID + " = ?",
-                new String[]{String.valueOf(user.getId())});
+        // delete phoneState record by id
+        db.delete(TABLE_PHONE_STATE, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(phoneState.getId())});
         db.close();
     }
 
-    /**
-     * This method to check user exist or not
-     *
-     * @param email
-     * @return true/false
-     */
-    public boolean checkUser(String email) {
 
-        // array of columns to fetch
-        String[] columns = {
-                COLUMN_USER_ID
-        };
-        SQLiteDatabase db = this.getReadableDatabase();
 
-        // selection criteria
-        String selection = COLUMN_USER_EMAIL + " = ?";
-
-        // selection argument
-        String[] selectionArgs = {email};
-
-        // query user table with condition
-        /**
-         * Here query function is used to fetch records from user table this function works like we use sql query.
-         * SQL query equivalent to this query function is
-         * SELECT user_id FROM user WHERE user_email = 'jack@androidtutorialshub.com';
-         */
-        Cursor cursor = db.query(TABLE_USER, //Table to query
-                columns,                    //columns to return
-                selection,                  //columns for the WHERE clause
-                selectionArgs,              //The values for the WHERE clause
-                null,                       //group the rows
-                null,                      //filter by row groups
-                null);                      //The sort order
-        int cursorCount = cursor.getCount();
-        cursor.close();
-        db.close();
-
-        if (cursorCount > 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * This method to check user exist or not
-     *
-     * @param email
-     * @param password
-     * @return true/false
-     */
-    public boolean checkUser(String email, String password) {
-
-        // array of columns to fetch
-        String[] columns = {
-                COLUMN_USER_ID
-        };
-        SQLiteDatabase db = this.getReadableDatabase();
-        // selection criteria
-        String selection = COLUMN_USER_EMAIL + " = ?" + " AND " + COLUMN_USER_PASSWORD + " = ?";
-
-        // selection arguments
-        String[] selectionArgs = {email, password};
-
-        // query user table with conditions
-        /**
-         * Here query function is used to fetch records from user table this function works like we use sql query.
-         * SQL query equivalent to this query function is
-         * SELECT user_id FROM user WHERE user_email = 'jack@androidtutorialshub.com' AND user_password = 'qwerty';
-         */
-        Cursor cursor = db.query(TABLE_USER, //Table to query
-                columns,                    //columns to return
-                selection,                  //columns for the WHERE clause
-                selectionArgs,              //The values for the WHERE clause
-                null,                       //group the rows
-                null,                       //filter by row groups
-                null);                      //The sort order
-
-        int cursorCount = cursor.getCount();
-
-        cursor.close();
-        db.close();
-        if (cursorCount > 0) {
-            return true;
-        }
-
-        return false;
-    }
 }

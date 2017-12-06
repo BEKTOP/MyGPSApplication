@@ -8,19 +8,16 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.github.a5809909.mygpsapplication.R;
-import com.github.a5809909.mygpsapplication.model.User;
+import com.github.a5809909.mygpsapplication.model.PhoneState;
 
 import java.util.List;
 
-/**
- * Created by lalit on 10/10/2016.
- */
 
 public class UsersRecyclerAdapter extends RecyclerView.Adapter<UsersRecyclerAdapter.UserViewHolder> {
 
-    private List<User> listUsers;
+    private List<PhoneState> listUsers;
 
-    public UsersRecyclerAdapter(List<User> listUsers) {
+    public UsersRecyclerAdapter(List<PhoneState> listUsers) {
         this.listUsers = listUsers;
     }
 
@@ -35,9 +32,9 @@ public class UsersRecyclerAdapter extends RecyclerView.Adapter<UsersRecyclerAdap
 
     @Override
     public void onBindViewHolder(UserViewHolder holder, int position) {
-        holder.textViewName.setText(listUsers.get(position).getName());
-        holder.textViewEmail.setText(listUsers.get(position).getEmail());
-        holder.textViewPassword.setText(listUsers.get(position).getPassword());
+        holder.textViewName.setText(listUsers.get(position).getLac_0());
+        holder.textViewEmail.setText(listUsers.get(position).getMcc());
+        holder.textViewPassword.setText(listUsers.get(position).getMnc());
     }
 
     @Override

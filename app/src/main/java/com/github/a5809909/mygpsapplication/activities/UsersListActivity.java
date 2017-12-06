@@ -11,22 +11,19 @@ import android.support.v7.widget.RecyclerView;
 
 import com.github.a5809909.mygpsapplication.R;
 import com.github.a5809909.mygpsapplication.adapters.UsersRecyclerAdapter;
-import com.github.a5809909.mygpsapplication.model.User;
+import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by lalit on 10/10/2016.
- */
 
 public class UsersListActivity extends AppCompatActivity {
 
     private AppCompatActivity activity = UsersListActivity.this;
     private AppCompatTextView textViewName;
     private RecyclerView recyclerViewUsers;
-    private List<User> listUsers;
+    private List<PhoneState> listUsers;
     private UsersRecyclerAdapter usersRecyclerAdapter;
     private DatabaseHelper databaseHelper;
 
@@ -77,7 +74,7 @@ public class UsersListActivity extends AppCompatActivity {
             @Override
             protected Void doInBackground(Void... params) {
                 listUsers.clear();
-                listUsers.addAll(databaseHelper.getAllUser());
+                listUsers.addAll(databaseHelper.getAllPhoneStates());
 
                 return null;
             }
