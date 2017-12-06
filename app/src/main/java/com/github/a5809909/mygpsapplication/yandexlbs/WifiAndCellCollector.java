@@ -13,6 +13,8 @@ import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 
+import com.github.a5809909.mygpsapplication.model.LbsInfo;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -321,17 +323,17 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
       }
     }
 
-    // API SDK < 7
-    @Override
-    public void onDataConnectionStateChanged(int state) {
-        this.networkType = networkTypeStr.get(tm.getNetworkType());
-    }
-
-    // API SDK >= 7
-    @Override
-    public void onDataConnectionStateChanged(int state, int networkType) {
-        this.networkType = networkTypeStr.get(networkType);
-    }
+//    // API SDK < 7
+//    @Override
+//    public void onDataConnectionStateChanged(int state) {
+//        this.networkType = networkTypeStr.get(tm.getNetworkType());
+//    }
+//
+//    // API SDK >= 7
+//    @Override
+//    public void onDataConnectionStateChanged(int state, int networkType) {
+//        this.networkType = networkTypeStr.get(networkType);
+//    }
 
 //    @Override
 //    public void onLocationChanged(Location location) {

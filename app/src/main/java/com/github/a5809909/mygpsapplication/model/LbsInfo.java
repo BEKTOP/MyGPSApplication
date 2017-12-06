@@ -1,4 +1,4 @@
-package com.github.a5809909.mygpsapplication.yandexlbs;
+package com.github.a5809909.mygpsapplication.model;
 
 import android.util.Log;
 
