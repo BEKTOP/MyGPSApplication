@@ -26,23 +26,23 @@ public class PhoneStateCollector {
 
     private final ArrayList<WifiInfo> wifiInfos;
     private final WifiManager wifi;
-    private final int lastWifiScanTime;
     private final long lastSendDataTime;
+
     private int cellId;
     private int lac;
     private int cellSize;
-    private String model;
     private SimpleDateFormat formatter;
-
-    private String manufacturer;
-
     private String mcc;
     private String  mnc;
     private String radioType;
     private String networkType;
     private String network;
+    private String manufacturer;
+    private String model;
+
     public static final String GSM = "gsm";
     public static final String CDMA = "cdma";
+    private List<ScanResult> wifiNetworks;
     private List<CellInfo> cellInfos;
 
     public static Map<Integer,String> networkTypeStr;
@@ -66,6 +66,8 @@ public class PhoneStateCollector {
 
         TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         GsmCellLocation gsmCell = (GsmCellLocation) tm.getCellLocation();
+        List<NeighboringCellInfo> cellList = tm.getNeighboringCellInfo();
+        cellSize = cellList.size();
         if (tm != null) {
             networkType = networkTypeStr.get(tm.getNetworkType());
             radioType = getRadioType(tm.getNetworkType());
@@ -87,7 +89,7 @@ public class PhoneStateCollector {
         } catch (UnsupportedEncodingException e) {
             model = new String(encodeUrl(Build.MODEL.getBytes()));
         }
-        String manufacturer;
+
         try {
             manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes("UTF-8")));
         } catch (UnsupportedEncodingException e) {
@@ -97,7 +99,6 @@ public class PhoneStateCollector {
         SimpleDateFormat formatter = new SimpleDateFormat("ddMMyyyy:HHmmss");
         wifiInfos = new ArrayList<WifiInfo>();
         wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        lastWifiScanTime = 0;
         lastSendDataTime = System.currentTimeMillis();
 
         wifiInfos.clear();
@@ -122,23 +123,23 @@ public class PhoneStateCollector {
                     wifiInfos.add(info);
                 }
             }
-            logi(manufacturer, formatter, wifiNetworks);
+          //  logi();
 
         }
     }
 
-    public void logi(String pManufacturer, SimpleDateFormat pFormatter, List<ScanResult> pWifiNetworks) {
+    public void logi() {
         Log.i("Cell", "cellId: "+cellId+"\n" +
                 "lac: "+lac+"\n" +
                 "radioType: "+radioType+"\n" +
                 "networkType: "+networkType+"\n"+
                 "mcc: "+mcc+"\n"+
                 "mnc: "+mnc+"\n"+
-                "wifiNetworks.size(): "+ pWifiNetworks.size()+"\n"+
+
                 "model: "+model+"\n"+
-                "manufacturer: "+ pManufacturer +"\n"+
+                "manufacturer: "+ manufacturer +"\n"+
                 "lastSendDataTime: "+lastSendDataTime+"\n"+
-                "formatter: "+ pFormatter.format(lastSendDataTime)+"\n"+
+                "formatter: "+ formatter.format(lastSendDataTime)+"\n"+
                 "cellSize: "+cellSize+"\n"+
                 "wifiInfos.size: "+wifiInfos.size()+"\n"+
                 "mac[0]: "+wifiInfos.get(0).mac+"\n"+
@@ -149,7 +150,6 @@ public class PhoneStateCollector {
                 "signalStrength[1]: "+wifiInfos.get(1).signalStrength+"\n"+
                 "signalStrength[2]: "+wifiInfos.get(2).signalStrength+"\n"+
                 "signalStrength[3]: "+wifiInfos.get(3).signalStrength+"\n"
-
 
         );
     }

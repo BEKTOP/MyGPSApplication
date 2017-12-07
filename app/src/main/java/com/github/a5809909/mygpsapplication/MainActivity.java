@@ -11,8 +11,8 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.github.a5809909.mygpsapplication.Services.LogService;
 import com.github.a5809909.mygpsapplication.activities.DataActivity;
-import com.github.a5809909.mygpsapplication.activities.UsersListActivity;
 import com.github.a5809909.mygpsapplication.model.LbsInfo;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
@@ -36,13 +36,16 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+
 
         instance = this;
         wifiAndCellCollector = new WifiAndCellCollector(this);
         phoneStateCollector = new PhoneStateCollector(this);
 
-        btnDoLbs =  findViewById(R.id.btn_show_database);
+
+        btnDoLbs = findViewById(R.id.btn_show_database);
         btnDoLbs.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -51,12 +54,12 @@ public class MainActivity extends Activity {
                 startActivity(intentRegister);
             }
         });
-        btnDoLbs =  findViewById(R.id.btn_send_gps_com);
+        btnDoLbs = findViewById(R.id.btn_send_gps_com);
         btnDoLbs.setOnClickListener(new OnClickListener() {
 
             @Override
             public void onClick(View v) {
-         //      phoneStateCollector.logi();
+                phoneStateCollector.logi();
             }
         });
         btnDoLbs = findViewById(R.id.btn_do_lbs);
@@ -133,11 +136,11 @@ public class MainActivity extends Activity {
     }
 
     private void initViews() {
-        lbsLatitude =  findViewById(R.id.lbs_latitude);
-        lbsLongtitude =  findViewById(R.id.lbs_longtitude);
+        lbsLatitude = findViewById(R.id.lbs_latitude);
+        lbsLongtitude = findViewById(R.id.lbs_longtitude);
         lbsAltitude = findViewById(R.id.lbs_altitude);
-        lbsPrecision =  findViewById(R.id.lbs_precision);
-        lbsType =  findViewById(R.id.lbs_type);
+        lbsPrecision = findViewById(R.id.lbs_precision);
+        lbsType = findViewById(R.id.lbs_type);
     }
 
     private void saveInSql(PhoneState result) {
@@ -146,21 +149,28 @@ public class MainActivity extends Activity {
 
     }
 
+    public void print(String message) {
+        lbsAltitude.setText(message);
+
+    }
+
     @Override
-    protected void onResume() {
-        super.onResume();
-        wifiAndCellCollector.startCollect();
+    protected void onStart() {
+        super.onStart();
+//        wifiAndCellCollector.startCollect();
+        startService(new Intent(MainActivity.this, LogService.class));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        wifiAndCellCollector.stopCollect();
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        //  wifiAndCellCollector.stopCollect();
     }
 
 }

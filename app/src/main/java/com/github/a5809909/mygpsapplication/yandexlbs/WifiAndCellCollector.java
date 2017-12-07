@@ -14,6 +14,8 @@ import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 
 import com.github.a5809909.mygpsapplication.model.LbsInfo;
+import com.github.a5809909.mygpsapplication.model.PhoneState;
+import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,7 +48,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
     public static final String GSM = "gsm";
     public static final String CDMA = "cdma";
 
-    private static final long COLLECTION_TIMEOUT = 30000;
+    private static final long COLLECTION_TIMEOUT = 60000;
     private static final long WIFI_SCAN_TIMEOUT = 30000;
     private static final long GPS_SCAN_TIMEOUT = 2000;
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
@@ -94,6 +96,9 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_IDEN, "IDEN");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UNKNOWN, "UNKNOWN");
     }
+
+
+    private int cellSize;
 
     public WifiAndCellCollector(Context context) {
    //     this.listener = listener;
@@ -158,13 +163,47 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         while (isRun) {
             collectWifiInfo();
             collectCellInfo();
-            generateAndAddWifiPoolChunk();
-            sendDataIfNeed();
+            logi();
+            PhoneState phoneState = new PhoneState();
+            phoneState.setMnc(wifiInfos.size()+"");
+            phoneState.setMcc(mcc);
+            phoneState.setLac_0(wifiInfos.size());
+
+            DatabaseHelper databaseHelper = new DatabaseHelper(context);
+            databaseHelper.addUser(phoneState);
             try {
                 Thread.sleep(COLLECTION_TIMEOUT);
             } catch (InterruptedException ie) {}
         }
     }
+    public void logi() {
+        String message ="cellId: "+cellId+"\n" +
+                "lac: "+lac+"\n" +
+                "radioType: "+radioType+"\n" +
+                "networkType: "+networkType+"\n"+
+                "mcc: "+mcc+"\n"+
+                "mnc: "+mnc+"\n"+
+                "model: "+model+"\n"+
+                "manufacturer: "+ manufacturer +"\n"+
+                "lastSendDataTime: "+lastSendDataTime+"\n"+
+                "formatter: "+ formatter.format(lastSendDataTime)+"\n"+
+                "cellSize: "+cellSize+"\n"+
+                "wifiInfos.size: "+wifiInfos.size()+"\n"+
+                "mac[0]: "+wifiInfos.get(0).mac+"\n"+
+                "mac[1]: "+wifiInfos.get(1).mac+"\n"+
+                "mac[2]: "+wifiInfos.get(2).mac+"\n"+
+                "mac[3]: "+wifiInfos.get(3).mac+"\n"+
+                "signalStrength[0]: "+wifiInfos.get(0).signalStrength+"\n"+
+                "signalStrength[1]: "+wifiInfos.get(1).signalStrength+"\n"+
+                "signalStrength[2]: "+wifiInfos.get(2).signalStrength+"\n"+
+                "signalStrength[3]: "+wifiInfos.get(3).signalStrength+"\n";
+
+        Log.i("Cell", message);
+
+
+
+    }
+
 
     public void collectWifiInfo() {
         wifiInfos.clear();
@@ -210,6 +249,8 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         }
         cellInfos.clear();
         List<NeighboringCellInfo> cellList = tm.getNeighboringCellInfo();
+        cellSize = cellList.size();
+        Log.i("cs", "collectCellInfo: "+cellSize);
         for (NeighboringCellInfo cell : cellList) {
             int cellId = cell.getCid();
             int lac = NeighboringCellInfo.UNKNOWN_CID;
