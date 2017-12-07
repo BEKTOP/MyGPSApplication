@@ -2,41 +2,68 @@ package com.github.a5809909.mygpsapplication.Services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.widget.Toast;
 
-import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class LogService extends Service {
 
-    WifiAndCellCollector wifiAndCellCollector;
-    @Nullable
+    // constant
+    public static final long NOTIFY_INTERVAL = 60 * 1000; // 60 seconds
+
+    // run on another Thread to avoid crash
+    private Handler mHandler = new Handler();
+    // timer handling
+    private Timer mTimer = null;
+
     @Override
-
     public IBinder onBind(Intent intent) {
-                return null;
-            }
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-            @Override
+    @Override
     public void onCreate() {
+        // cancel if already existed
+        if (mTimer != null) {
+            mTimer.cancel();
+        } else {
+            // recreate new
+            mTimer = new Timer();
+        }
+        // schedule task
+        mTimer.scheduleAtFixedRate(new TimeDisplayTimerTask(), 0,
+                NOTIFY_INTERVAL);
+    }
 
-                Toast.makeText(this, "Create", Toast.LENGTH_SHORT).show();
+    class TimeDisplayTimerTask extends TimerTask {
 
-                        super.onCreate();
-            }
+        @Override
+        public void run() {
+            // run on another thread
+            mHandler.post(new Runnable() {
 
-            @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-              //  wifiAndCellCollector.startCollect();
-                Toast.makeText(this, "onStart",Toast.LENGTH_SHORT).show();
-                        return super.onStartCommand(intent, flags, startId);
-            }
+                @Override
+                public void run() {
+                    // display toast
+                    Toast.makeText(getApplicationContext(), "Пора кормить кота!",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
-            @Override
-    public void onDestroy() {
-                Toast.makeText(this, "Destroy",Toast.LENGTH_SHORT).show();
-          //     wifiAndCellCollector.stopCollect();
-                super.onDestroy();
-            }
+        // используйте метод в сообщении для вывода текущего времени вместо слов о кормежке кота
+        private String getDateTime() {
+            // get date time in custom format
+            SimpleDateFormat sdf = new SimpleDateFormat(
+                    "[dd/MM/yyyy - HH:mm:ss]", Locale.getDefault());
+            return sdf.format(new Date());
+        }
+    }
 }
