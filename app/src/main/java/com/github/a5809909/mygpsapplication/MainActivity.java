@@ -11,6 +11,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.github.a5809909.mygpsapplication.activities.DataActivity;
 import com.github.a5809909.mygpsapplication.activities.UsersListActivity;
 import com.github.a5809909.mygpsapplication.model.LbsInfo;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
@@ -46,11 +47,18 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                Intent intentRegister = new Intent(getApplicationContext(), UsersListActivity.class);
+                Intent intentRegister = new Intent(getApplicationContext(), DataActivity.class);
                 startActivity(intentRegister);
             }
         });
+        btnDoLbs =  findViewById(R.id.btn_send_gps_com);
+        btnDoLbs.setOnClickListener(new OnClickListener() {
 
+            @Override
+            public void onClick(View v) {
+         //      phoneStateCollector.logi();
+            }
+        });
         btnDoLbs = findViewById(R.id.btn_do_lbs);
         btnDoLbs.setOnClickListener(new OnClickListener() {
 
@@ -88,9 +96,8 @@ public class MainActivity extends Activity {
         @Override
         protected LbsInfo doInBackground(Void... params) {
 
-                 LbsInfo lbsInfo = wifiAndCellCollector.requestMyLocation();
-                    return lbsInfo;
-
+            LbsInfo lbsInfo = wifiAndCellCollector.requestMyLocation();
+            return lbsInfo;
         }
 
         @Override
@@ -102,10 +109,8 @@ public class MainActivity extends Activity {
             lbsAltitude.setText("Altitude=" + result.lbsAltitude);
             lbsPrecision.setText("Precision=" + result.lbsPrecision);
             lbsType.setText("Type=" + result.lbsType);
-
-        //    initObjects(result);
-
             progressDialog.hide();
+            //    saveInSql(result);
         }
 
     }
@@ -115,31 +120,28 @@ public class MainActivity extends Activity {
         @Override
         protected PhoneState doInBackground(Void... params) {
 
-           PhoneState phoneState = phoneStateCollector.getPhoneState();
+            PhoneState phoneState = phoneStateCollector.getPhoneState();
             return phoneState;
         }
 
         @Override
         protected void onPostExecute(PhoneState result) {
             super.onPostExecute(result);
-            initObjects(result);
+            saveInSql(result);
         }
 
     }
 
-
-
     private void initViews() {
-        lbsLatitude = (TextView) findViewById(R.id.lbs_latitude);
-        lbsLongtitude = (TextView) findViewById(R.id.lbs_longtitude);
-        lbsAltitude = (TextView) findViewById(R.id.lbs_altitude);
-        lbsPrecision = (TextView) findViewById(R.id.lbs_precision);
-        lbsType = (TextView) findViewById(R.id.lbs_type);
+        lbsLatitude =  findViewById(R.id.lbs_latitude);
+        lbsLongtitude =  findViewById(R.id.lbs_longtitude);
+        lbsAltitude = findViewById(R.id.lbs_altitude);
+        lbsPrecision =  findViewById(R.id.lbs_precision);
+        lbsType =  findViewById(R.id.lbs_type);
     }
 
-    private void initObjects(PhoneState result) {
+    private void saveInSql(PhoneState result) {
         databaseHelper = new DatabaseHelper(this);
-
         databaseHelper.addUser(result);
 
     }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.model.User;
@@ -25,23 +26,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // User Table Columns names
     private static final String COLUMN_ID = "_id";
-    private static final String COLUMN_LAC = "lac";
-    private static final String COLUMN_MCC = "mcc";
-    private static final String COLUMN_MNC = "mnc";
+    public static final String COLUMN_LAC = "lac";
+    public static final String COLUMN_MCC = "mcc";
+    public static final String COLUMN_MNC = "mnc";
 
-    // create table sql query
     private String CREATE_PHONE_STATE_TABLE = "CREATE TABLE " + TABLE_PHONE_STATE + "("
             + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_LAC + " TEXT,"
             + COLUMN_MCC + " TEXT," + COLUMN_MNC + " TEXT" + ")";
 
-    // drop table sql query
     private String DROP_PHONE_STATE_TABLE = "DROP TABLE IF EXISTS " + TABLE_PHONE_STATE;
 
-    /**
-     * Constructor
-     * 
-     * @param context
-     */
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -51,7 +45,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_PHONE_STATE_TABLE);
     }
 
-
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
@@ -60,17 +53,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Create tables again
         onCreate(db);
-
     }
 
-    /**
-     * This method is to create phoneState record
-     *
-     * @param phoneState
-     */
     public void addUser(PhoneState phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
-
         ContentValues values = new ContentValues();
         values.put(COLUMN_LAC, phoneState.getLac_0());
         values.put(COLUMN_MCC, phoneState.getMcc());
@@ -86,6 +72,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
      *
      * @return list
      */
+
+    public Cursor getAllItems() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_PHONE_STATE, null, null, null, null, null, null);
+        Log.i("cc", "getAllItems: "+cursor.getPosition());
+        return cursor;
+    }
+
     public List<PhoneState> getAllPhoneStates() {
         // array of columns to fetch
         String[] columns = {
@@ -101,12 +95,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         SQLiteDatabase db = this.getReadableDatabase();
 
-        // query the phoneState table
-        /**
-         * Here query function is used to fetch records from phoneState table this function works like we use sql query.
-         * SQL query equivalent to this query function is
-         * SELECT phoneState_id,phoneState_name,phoneState_email,phoneState_password FROM phoneState ORDER BY phoneState_name;
-         */
         Cursor cursor = db.query(TABLE_PHONE_STATE, //Table to query
                 columns,    //columns to return
                 null,        //columns for the WHERE clause
@@ -114,7 +102,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 null,       //group the rows
                 null,       //filter by row groups
                 sortOrder); //The sort order
-
 
         // Traversing through all rows and adding to list
         if (cursor.moveToFirst()) {
@@ -135,11 +122,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return phoneStateList;
     }
 
-    /**
-     * This method to update phoneState record
-     *
-     * @param phoneState
-     */
     public void updateUser(User phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -166,7 +148,5 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{String.valueOf(phoneState.getId())});
         db.close();
     }
-
-
 
 }

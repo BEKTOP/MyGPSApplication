@@ -12,6 +12,7 @@
         android:theme="@style/AppTheme">
 
         <activity android:name=".activities.UsersListActivity"/>
+        <activity android:name=".activities.DataActivity"/>
         <activity android:name=".MainActivity">
             <!--<activity android:name=".yandexlbs.LbsApiActivity">-->
                 <intent-filter>
