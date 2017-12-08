@@ -1,10 +1,18 @@
 package com.github.a5809909.mygpsapplication.Services;
 
+import android.app.IntentService;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
+import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.widget.Toast;
+
+import com.github.a5809909.mygpsapplication.Utils.ContextHolder;
+import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -12,58 +20,37 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class LogService extends Service {
+public class LogService extends IntentService {
 
-    // constant
-    public static final long NOTIFY_INTERVAL = 60 * 1000; // 60 seconds
-
-    // run on another Thread to avoid crash
-    private Handler mHandler = new Handler();
-    // timer handling
-    private Timer mTimer = null;
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        // TODO Auto-generated method stub
-        return null;
+    public LogService() {
+        super("LogService");
     }
 
+    /**
+     * The IntentService calls this method from the default worker thread with
+     * the intent that started the service. When this method returns, IntentService
+     * stops the service, as appropriate.
+     */
     @Override
-    public void onCreate() {
-        // cancel if already existed
-        if (mTimer != null) {
-            mTimer.cancel();
-        } else {
-            // recreate new
-            mTimer = new Timer();
-        }
-        // schedule task
-        mTimer.scheduleAtFixedRate(new TimeDisplayTimerTask(), 0,
-                NOTIFY_INTERVAL);
-    }
-
-    class TimeDisplayTimerTask extends TimerTask {
-
-        @Override
-        public void run() {
-            // run on another thread
-            mHandler.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    // display toast
-                    Toast.makeText(getApplicationContext(), "Пора кормить кота!",
-                            Toast.LENGTH_SHORT).show();
+    protected void onHandleIntent(Intent intent) {
+        // Normally we would do some work here, like download a file.
+        // For our sample, we just sleep for 5 seconds.
+        long endTime = System.currentTimeMillis() + 5*1000;
+        while (System.currentTimeMillis() < endTime) {
+            synchronized (this) {
+                try {
+                    Log.i("tag", "onHandleIntent: ");
+                    wait(endTime - System.currentTimeMillis());
+                    Toast.makeText(this, "service 5", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.i("tag", "onHandleIntent:2 ");
                 }
-            });
+            }
         }
-
-        // используйте метод в сообщении для вывода текущего времени вместо слов о кормежке кота
-        private String getDateTime() {
-            // get date time in custom format
-            SimpleDateFormat sdf = new SimpleDateFormat(
-                    "[dd/MM/yyyy - HH:mm:ss]", Locale.getDefault());
-            return sdf.format(new Date());
-        }
+    }
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
+        return super.onStartCommand(intent,flags,startId);
     }
 }
