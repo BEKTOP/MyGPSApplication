@@ -1,23 +1,22 @@
 package com.github.a5809909.mygpsapplication.Services;
 
-import android.Manifest;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.telephony.CellLocation;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
-import android.widget.TextView;
+import android.widget.Toast;
 
-import com.github.a5809909.mygpsapplication.MainActivity;
-import com.github.a5809909.mygpsapplication.R;
-import com.github.a5809909.mygpsapplication.Utils.PermissionUtils;
-import com.github.a5809909.mygpsapplication.Utils.PhoneCallback;
+import com.github.a5809909.mygpsapplication.Utils.CustomPhoneStateListener;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 import com.github.a5809909.mygpsapplication.yandexlbs.Base64;
@@ -33,14 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import static android.support.v4.app.ActivityCompat.requestPermissions;
-
 
 public class LogService extends IntentService  {
-    TelephonyManager Tel;
+
     private static final String[] lbsPostName = new String[]{"xml"};
     private static final String[] lbsContentType = new String[]{"xml"};
-    private TelephonyManager mTelephonyManager;
+
     private static final String[] wifipoolPostName = new String[]{"data"};
     private static final String[] wifipoolContentType = new String[]{"xml"};
     private static final String[] wifipoolContentTypeGzipped = new String[]{"xml/gzip"};
@@ -60,10 +57,7 @@ public class LogService extends IntentService  {
     private static final long GPS_SCAN_TIMEOUT = 2000;
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
     private static final long SEND_TIMEOUT = 30000;
-    private static final String[] PERMISSIONS = {
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.ACCESS_COARSE_LOCATION };
-    private static final int PERMISSION_REQUEST = 100;
+
     private String uuid;
     private ArrayList<String> wifipoolChunks;
     private SimpleDateFormat formatter;
@@ -112,46 +106,12 @@ public class LogService extends IntentService  {
         super("LogService");
     }
 
-    private void checkPermissions() {
-        // Checks the Android version of the device.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Boolean canWriteExternalStorage = PermissionUtils.canReadPhoneState(MainActivity.class);
-            Boolean canReadExternalStorage = PermissionUtils.canAccessCoarseLocation(this);
-            if (!canWriteExternalStorage || !canReadExternalStorage) {
-                requestPermissions(PERMISSIONS, PERMISSION_REQUEST);
-            } else {
-                // Permission was granted.
-                callPhoneManager();
-            }
-        } else {
-            // Version is below Marshmallow.
-            callPhoneManager();
-        }
-    }
-    private void callPhoneManager() {
-
-        mTelephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-        mTelephonyManager.listen(new PhoneCallback() , PhoneStateListener.LISTEN_CALL_STATE
-                | PhoneStateListener.LISTEN_CELL_INFO // Requires API 17
-                | PhoneStateListener.LISTEN_CELL_LOCATION
-                | PhoneStateListener.LISTEN_DATA_ACTIVITY
-                | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE
-                | PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS
-                | PhoneStateListener.LISTEN_CALL_FORWARDING_INDICATOR
-                | PhoneStateListener.LISTEN_MESSAGE_WAITING_INDICATOR);
-    }
-
-
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
-        checkPermissions();
-
         isRun = true;
         tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-        tm.listen(new PhoneCallback(this),
+        tm.listen(new CustomPhoneStateListener(this),
                 PhoneStateListener.LISTEN_CALL_STATE
                         | PhoneStateListener.LISTEN_CELL_INFO // Requires API 17
                         | PhoneStateListener.LISTEN_CELL_LOCATION
@@ -200,6 +160,10 @@ public class LogService extends IntentService  {
                 collectWifiInfo();
                 collectCellInfo();
 
+                CustomPhoneStateListener customPhoneStateListener =new CustomPhoneStateListener(this){
+                };
+                lac= customPhoneStateListener.getCellId();
+               Log.i("lac", "onHandleIntent: "+lac);
                 logi();
                 PhoneState phoneState = new PhoneState();
 
@@ -444,6 +408,6 @@ public class LogService extends IntentService  {
         Log.i("Cell", message);
 
 
+
     }
 }
-
