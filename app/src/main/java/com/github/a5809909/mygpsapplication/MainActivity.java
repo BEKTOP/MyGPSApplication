@@ -1,11 +1,13 @@
 package com.github.a5809909.mygpsapplication;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -18,6 +20,8 @@ import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 import com.github.a5809909.mygpsapplication.yandexlbs.PhoneStateCollector;
 import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
+
+import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -157,9 +161,32 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-//        wifiAndCellCollector.startCollect();
-        startService(new Intent(MainActivity.this, LogService.class));
+        ActivityManager am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> rs = am.getRunningServices(50);
+        int j = 0;
+
+        for (int i = 0; i < rs.size(); i++) {
+
+            if (j == 1) {
+                Log.i("serv", "YES service ");
+            } else {
+                ActivityManager.RunningServiceInfo
+                        rsi = rs.get(i);
+
+                if (rsi.equals("com.github.a5809909.mygpsapplication with component com.github.a5809909.mygpsapplication.Services.LogService")) {
+
+                    j = 1;
+                    break;
+                }
+            }
+        }
+        if (j == 0) {
+            Log.i("serv", "NO service ");
+            startService(new Intent(MainActivity.this, LogService.class));
+        }
     }
+
+
 
     @Override
     protected void onPause() {
