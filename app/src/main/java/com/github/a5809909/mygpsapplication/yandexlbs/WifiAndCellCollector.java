@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
-public class WifiAndCellCollector extends PhoneStateListener implements Runnable {
+public class WifiAndCellCollector extends PhoneStateListener implements Runnable{
 
     private static final String[] lbsPostName = new String[]{"xml"};
     private static final String[] lbsContentType = new String[]{"xml"};

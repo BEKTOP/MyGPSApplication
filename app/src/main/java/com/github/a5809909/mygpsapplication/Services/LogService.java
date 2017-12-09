@@ -4,17 +4,19 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 import com.github.a5809909.mygpsapplication.yandexlbs.Base64;
-import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -27,7 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-public class LogService extends IntentService {
+
+public class LogService extends IntentService  {
 
     private static final String[] lbsPostName = new String[]{"xml"};
     private static final String[] lbsContentType = new String[]{"xml"};
@@ -46,7 +49,7 @@ public class LogService extends IntentService {
     public static final String CDMA = "cdma";
     private static final Class[] emptyParamDesc = new Class[]{};
     private static final Object[] emptyParam = new Object[]{};
-    private static final long COLLECTION_TIMEOUT = 60000;
+    private static final long COLLECTION_TIMEOUT = 10000;
     private static final long WIFI_SCAN_TIMEOUT = 30000;
     private static final long GPS_SCAN_TIMEOUT = 2000;
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
@@ -100,13 +103,19 @@ public class LogService extends IntentService {
         super("LogService");
     }
 
-
-
+    @Override
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+        Toast.makeText(this,"Service started", Toast.LENGTH_SHORT).show();
+        return START_STICKY;
+    }
 
     @Override
     protected void onHandleIntent(Intent intent) {
         isRun = true;
-
+        if (tm != null) {
+    //        tm.listen(, PhoneStateListener.LISTEN_SIGNAL_STRENGTH | PhoneStateListener.LISTEN_CELL_LOCATION | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE);
+        }
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Log.i("cells", "start: ");
         tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
         if (tm != null) {
@@ -140,15 +149,16 @@ public class LogService extends IntentService {
         wifiInfos = new ArrayList<WifiInfo>();
         wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         lastWifiScanTime = 0;
-        lastSendDataTime = System.currentTimeMillis();
+
 
         while (isRun) {
+            lastSendDataTime = System.currentTimeMillis();
             collectWifiInfo();
             collectCellInfo();
             logi();
             PhoneState phoneState = new PhoneState();
             phoneState.setMnc(wifiInfos.size()+"");
-            phoneState.setMcc(mcc);
+            phoneState.setMcc(formatter.format(lastSendDataTime));
             phoneState.setLac_0(wifiInfos.size());
 
             DatabaseHelper databaseHelper = new DatabaseHelper(this);
@@ -374,12 +384,10 @@ public class LogService extends IntentService {
                 "wifiInfos.size: "+wifiInfos.size()+"\n"+
                 "mac[0]: "+wifiInfos.get(0).mac+"\n"+
                 "mac[1]: "+wifiInfos.get(1).mac+"\n"+
-                "mac[2]: "+wifiInfos.get(2).mac+"\n"+
-                "mac[3]: "+wifiInfos.get(3).mac+"\n"+
+
                 "signalStrength[0]: "+wifiInfos.get(0).signalStrength+"\n"+
-                "signalStrength[1]: "+wifiInfos.get(1).signalStrength+"\n"+
-                "signalStrength[2]: "+wifiInfos.get(2).signalStrength+"\n"+
-                "signalStrength[3]: "+wifiInfos.get(3).signalStrength+"\n";
+                "signalStrength[1]: "+wifiInfos.get(1).signalStrength+"\n";
+
 
         Log.i("Cell", message);
 
