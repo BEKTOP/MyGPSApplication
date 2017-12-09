@@ -55,6 +55,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+
+
+
     public void addUser(PhoneState phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();

@@ -48,7 +48,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
     public static final String GSM = "gsm";
     public static final String CDMA = "cdma";
 
-    private static final long COLLECTION_TIMEOUT = 60000;
+    private static final long COLLECTION_TIMEOUT = 10000;
     private static final long WIFI_SCAN_TIMEOUT = 30000;
     private static final long GPS_SCAN_TIMEOUT = 2000;
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
@@ -166,7 +166,8 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             logi();
             PhoneState phoneState = new PhoneState();
             phoneState.setMnc(wifiInfos.size()+"");
-            phoneState.setMcc(mcc);
+            lastSendDataTime = System.currentTimeMillis();
+            phoneState.setMcc(formatter.format(lastSendDataTime));
             phoneState.setLac_0(wifiInfos.size());
 
             DatabaseHelper databaseHelper = new DatabaseHelper(context);
