@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.github.a5809909.mygpsapplication.model.PhoneState;
-import com.github.a5809909.mygpsapplication.model.User;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -125,13 +125,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return phoneStateList;
     }
 
-    public void updateUser(User phoneState) {
+    public void updateUser(PhoneState phoneState) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put(COLUMN_LAC, phoneState.getName());
-        values.put(COLUMN_MCC, phoneState.getEmail());
-        values.put(COLUMN_MNC, phoneState.getPassword());
+        values.put(COLUMN_LAC, phoneState.getMnc());
+        values.put(COLUMN_MCC, phoneState.getMcc());
+        values.put(COLUMN_MNC, phoneState.getLac_0());
 
         // updating row
         db.update(TABLE_PHONE_STATE, values, COLUMN_ID + " = ?",

@@ -4,19 +4,14 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
-import android.telephony.CellLocation;
 import android.telephony.NeighboringCellInfo;
-import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.github.a5809909.mygpsapplication.Utils.CustomPhoneStateListener;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 import com.github.a5809909.mygpsapplication.yandexlbs.Base64;
@@ -33,7 +28,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 
-public class LogService extends IntentService  {
+public class LogService extends IntentService {
 
     private static final String[] lbsPostName = new String[]{"xml"};
     private static final String[] lbsContentType = new String[]{"xml"};
@@ -58,7 +53,6 @@ public class LogService extends IntentService  {
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
     private static final long SEND_TIMEOUT = 30000;
 
-    private String uuid;
     private ArrayList<String> wifipoolChunks;
     private SimpleDateFormat formatter;
     private TelephonyManager tm;
@@ -83,9 +77,10 @@ public class LogService extends IntentService  {
     private int cellSize;
     private volatile boolean isRun;
 
-    public static Map<Integer,String> networkTypeStr;
+    public static Map<Integer, String> networkTypeStr;
+
     static {
-        networkTypeStr = new HashMap<Integer,String>();
+        networkTypeStr = new HashMap<Integer, String>();
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_GPRS, "GPRS");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_EDGE, "EDGE");
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UMTS, "UMTS");
@@ -100,6 +95,8 @@ public class LogService extends IntentService  {
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UNKNOWN, "UNKNOWN");
     }
 
+    private int cId0 = 0;
+    private int lac0 = 0;
 
 
     public LogService() {
@@ -110,84 +107,76 @@ public class LogService extends IntentService  {
     @Override
     protected void onHandleIntent(Intent intent) {
         isRun = true;
-        tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-        tm.listen(new CustomPhoneStateListener(this),
-                PhoneStateListener.LISTEN_CALL_STATE
-                        | PhoneStateListener.LISTEN_CELL_INFO // Requires API 17
-                        | PhoneStateListener.LISTEN_CELL_LOCATION
-                        | PhoneStateListener.LISTEN_DATA_ACTIVITY
-                        | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE
-                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 
-            if (tm != null) {
-                networkType = networkTypeStr.get(tm.getNetworkType());
-                radioType = getRadioType(tm.getNetworkType());
-                String mccAndMnc = tm.getNetworkOperator();
+        if (tm != null) {
+            networkType = networkTypeStr.get(tm.getNetworkType());
+            radioType = getRadioType(tm.getNetworkType());
+            String mccAndMnc = tm.getNetworkOperator();
 
-                tm.getCellLocation();
-                cellInfos = new ArrayList<CellInfo>();
-                if (mccAndMnc != null && mccAndMnc.length() > 3) {
-                    mcc = mccAndMnc.substring(0, 3);
-                    mnc = mccAndMnc.substring(3);
-                } else {
-                    mcc = mnc = null;
-                }
+            tm.getCellLocation();
+            cellInfos = new ArrayList<CellInfo>();
+            if (mccAndMnc != null && mccAndMnc.length() > 3) {
+                mcc = mccAndMnc.substring(0, 3);
+                mnc = mccAndMnc.substring(3);
+            } else {
+                mcc = mnc = null;
             }
+        }
 
-            tm.getNetworkOperatorName();
+        tm.getNetworkOperatorName();
+        try {
+            model = new String(encodeUrl(Build.MODEL.getBytes("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            model = new String(encodeUrl(Build.MODEL.getBytes()));
+        }
+        try {
+            manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes()));
+        }
+
+        formatter = new SimpleDateFormat("ddMMyyyy:HHmmss");
+        formatter.setTimeZone(TimeZone.getTimeZone("Europe/Minsk"));
+
+        wifipoolChunks = new ArrayList<String>();
+        wifiInfos = new ArrayList<WifiInfo>();
+        wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        lastWifiScanTime = 0;
+
+
+        while (isRun) {
+            lastSendDataTime = System.currentTimeMillis();
+            collectWifiInfo();
+            collectCellInfo();
+            logi();
+            PhoneState phoneState = new PhoneState();
+            phoneState.setMnc(wifiInfos.size() + "");
+            phoneState.setMcc(formatter.format(lastSendDataTime));
+            phoneState.setLac_0(wifiInfos.size());
+
+            DatabaseHelper databaseHelper = new DatabaseHelper(this);
+            databaseHelper.addUser(phoneState);
             try {
-                model = new String(encodeUrl(Build.MODEL.getBytes("UTF-8")));
-            } catch (UnsupportedEncodingException e) {
-                model = new String(encodeUrl(Build.MODEL.getBytes()));
+                Thread.sleep(COLLECTION_TIMEOUT);
+            } catch (InterruptedException ie) {
             }
-            try {
-                manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes("UTF-8")));
-            } catch (UnsupportedEncodingException e) {
-                manufacturer = new String(encodeUrl(getDeviceManufacturer().getBytes()));
-            }
+        }
 
-            formatter = new SimpleDateFormat("ddMMyyyy:HHmmss");
-            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-            wifipoolChunks = new ArrayList<String>();
-            wifiInfos = new ArrayList<WifiInfo>();
-            wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-            lastWifiScanTime = 0;
-
-
-            while (isRun) {
-                lastSendDataTime = System.currentTimeMillis();
-                collectWifiInfo();
-                collectCellInfo();
-
-                CustomPhoneStateListener customPhoneStateListener =new CustomPhoneStateListener(this){
-                };
-                lac= customPhoneStateListener.getCellId();
-               Log.i("lac", "onHandleIntent: "+lac);
-                logi();
-                PhoneState phoneState = new PhoneState();
-
-                phoneState.setMnc(wifiInfos.size()+"");
-                phoneState.setMcc(formatter.format(lastSendDataTime));
-                phoneState.setLac_0(wifiInfos.size());
-
-                DatabaseHelper databaseHelper = new DatabaseHelper(this);
-                databaseHelper.addUser(phoneState);
-                try {
-                    Thread.sleep(COLLECTION_TIMEOUT);
-                } catch (InterruptedException ie) {}
-            }
-
-         }
+    }
 
     public void collectCellInfo() {
         if (tm == null) {
             return;
         }
+        GsmCellLocation cellLocation = (GsmCellLocation) tm.getCellLocation();
+        cId0 = cellLocation.getCid();
+        lac0 = cellLocation.getLac();
+
         cellInfos.clear();
         List<NeighboringCellInfo> cellList = tm.getNeighboringCellInfo();
         cellSize = cellList.size();
-        Log.i("cs", "collectCellInfo: "+cellSize);
+        Log.i("cs", "collectCellInfo: " + cellSize);
         for (NeighboringCellInfo cell : cellList) {
             int cellId = cell.getCid();
             int lac = NeighboringCellInfo.UNKNOWN_CID;
@@ -239,7 +228,7 @@ public class LogService extends IntentService  {
         if (wifi != null && wifi.isWifiEnabled()) {
             List<ScanResult> wifiNetworks = wifi.getScanResults();
             if (wifiNetworks != null && wifiNetworks.size() > 0) {
-                for (ScanResult net:wifiNetworks) {
+                for (ScanResult net : wifiNetworks) {
                     LogService.WifiInfo info = new LogService.WifiInfo();
                     info.mac = net.BSSID.toUpperCase();
                     char[] mac = net.BSSID.toUpperCase().toCharArray();
@@ -363,9 +352,9 @@ public class LogService extends IntentService  {
             return '\0';
         }
         if (digit < 10) {
-            return (char)('0' + digit);
+            return (char) ('0' + digit);
         }
-        return (char)('a' - 10 + digit);
+        return (char) ('a' - 10 + digit);
     }
 
     private class CellInfo {
@@ -383,30 +372,27 @@ public class LogService extends IntentService  {
     }
 
 
-
-
     public void logi() {
-        String message ="cellId: "+cellId+"\n" +
-                "lac: "+lac+"\n" +
-                "radioType: "+radioType+"\n" +
-                "networkType: "+networkType+"\n"+
-                "mcc: "+mcc+"\n"+
-                "mnc: "+mnc+"\n"+
-                "model: "+model+"\n"+
-                "manufacturer: "+ manufacturer +"\n"+
-                "lastSendDataTime: "+lastSendDataTime+"\n"+
-                "formatter: "+ formatter.format(lastSendDataTime)+"\n"+
-                "cellSize: "+cellSize+"\n"+
-                "wifiInfos.size: "+wifiInfos.size()+"\n"+
-                "mac[0]: "+wifiInfos.get(0).mac+"\n"+
-                "mac[1]: "+wifiInfos.get(1).mac+"\n"+
+        String message = "cellId: " + cId0 + "\n" +
+                "lac: " + lac0 + "\n" +
+                "radioType: " + radioType + "\n" +
+                "networkType: " + networkType + "\n" +
+                "mcc: " + mcc + "\n" +
+                "mnc: " + mnc + "\n" +
+                "model: " + model + "\n" +
+                "manufacturer: " + manufacturer + "\n" +
+                "lastSendDataTime: " + lastSendDataTime + "\n" +
+                "formatter: " + formatter.format(lastSendDataTime) + "\n" +
+                "cellSize: " + cellSize + "\n" +
+                "wifiInfos.size: " + wifiInfos.size() + "\n" +
+                "mac[0]: " + wifiInfos.get(0).mac + "\n" +
+                "mac[1]: " + wifiInfos.get(1).mac + "\n" +
 
-                "signalStrength[0]: "+wifiInfos.get(0).signalStrength+"\n"+
-                "signalStrength[1]: "+wifiInfos.get(1).signalStrength+"\n";
+                "signalStrength[0]: " + wifiInfos.get(0).signalStrength + "\n" +
+                "signalStrength[1]: " + wifiInfos.get(1).signalStrength + "\n";
 
 
         Log.i("Cell", message);
-
 
 
     }

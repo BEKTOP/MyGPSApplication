@@ -14,7 +14,7 @@
         <activity android:name=".activities.UsersListActivity"/>
         <service android:name=".Services.LogService"/>
         <activity android:name=".activities.DataActivity"/>
-        <activity android:name=".MainActivity">
+        <activity android:name=".activities.MainActivity">
             <!--<activity android:name=".yandexlbs.LbsApiActivity">-->
                 <intent-filter>
                     <action android:name="android.intent.action.MAIN" />

@@ -30,17 +30,6 @@ public class CustomPhoneStateListener extends PhoneStateListener {
         mContext = context;
     }
 
-//   @Override
-//    public void onCellLocationChanged(CellLocation location) {
-//        if (location != null) {
-//            if (location instanceof GsmCellLocation) {
-//                GsmCellLocation gsmLoc = (GsmCellLocation) location;
-//                lac = gsmLoc.getLac();
-//                cellId = gsmLoc.getCid();
-//            }
-//        }
-//    }
-
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override

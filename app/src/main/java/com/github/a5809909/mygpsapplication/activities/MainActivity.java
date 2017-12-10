@@ -1,4 +1,4 @@
-package com.github.a5809909.mygpsapplication;
+package com.github.a5809909.mygpsapplication.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -11,8 +11,8 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.github.a5809909.mygpsapplication.R;
 import com.github.a5809909.mygpsapplication.Services.LogService;
-import com.github.a5809909.mygpsapplication.activities.DataActivity;
 import com.github.a5809909.mygpsapplication.model.LbsInfo;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
@@ -37,14 +37,11 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
          //  wifiAndCellCollector.startCollect();
-
         setContentView(R.layout.activity_main);
-
 
         instance = this;
         wifiAndCellCollector = new WifiAndCellCollector(this);
         phoneStateCollector = new PhoneStateCollector(this);
-
 
         btnDoLbs = findViewById(R.id.btn_show_database);
         btnDoLbs.setOnClickListener(new OnClickListener() {
@@ -99,8 +96,9 @@ public class MainActivity extends Activity {
 
         @Override
         protected LbsInfo doInBackground(Void... params) {
-
+            wifiAndCellCollector.startCollect();
             LbsInfo lbsInfo = wifiAndCellCollector.requestMyLocation();
+            wifiAndCellCollector.startCollect();
             return lbsInfo;
         }
 

@@ -191,13 +191,9 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
                 "cellSize: "+cellSize+"\n"+
                 "wifiInfos.size: "+wifiInfos.size()+"\n"+
                 "mac[0]: "+wifiInfos.get(0).mac+"\n"+
-                "mac[1]: "+wifiInfos.get(1).mac+"\n"+
-                "mac[2]: "+wifiInfos.get(2).mac+"\n"+
-                "mac[3]: "+wifiInfos.get(3).mac+"\n"+
-                "signalStrength[0]: "+wifiInfos.get(0).signalStrength+"\n"+
-                "signalStrength[1]: "+wifiInfos.get(1).signalStrength+"\n"+
-                "signalStrength[2]: "+wifiInfos.get(2).signalStrength+"\n"+
-                "signalStrength[3]: "+wifiInfos.get(3).signalStrength+"\n";
+
+
+                "signalStrength[0]: "+wifiInfos.get(0).signalStrength+"\n";
 
         Log.i("Cell", message);
 

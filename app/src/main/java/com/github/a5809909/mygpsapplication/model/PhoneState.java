@@ -39,6 +39,17 @@ public class PhoneState {
     private String mac_4;
     private int macSignalStrength_4;
 
+    private String mac_5;
+    private int macSignalStrength_5;
+
+    private String mac_6;
+    private int macSignalStrength_6;
+
+    private String mac_7;
+    private int macSignalStrength_7;
+
+    private String mac_8;
+    private int macSignalStrength_8;
 
     public int getId() {
         return id;
