@@ -3,19 +3,14 @@ package com.github.a5809909.mygpsapplication.activities;
 import android.app.Activity;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 import android.widget.GridView;
-import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import com.github.a5809909.mygpsapplication.R;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class DataActivity extends Activity {
@@ -29,16 +24,22 @@ public class DataActivity extends Activity {
             setContentView(R.layout.activity_data);
             databaseHelper = new DatabaseHelper(this);
             List<PhoneState> phoneStates = databaseHelper.getAllPhoneStates();
-            for (PhoneState phoneState : phoneStates) {
-                Log.d("db", "size:"+phoneStates.size()+" Имя: " + phoneState.getCellId_0() + " email: " + phoneState.getMcc()+"\n");
-            }
+//            for (PhoneState phoneState : phoneStates) {
+//                Log.d("db", "size:"+phoneStates.size()+" Имя: " + phoneState.getCellId() + " email: " + phoneState.getMcc()+"\n");
+//            }
 
             databaseHelper.close();
             gv=findViewById(R.id.gridView1);
             mCursor = databaseHelper.getAllItems();
 
-            String[] from = new String[] { databaseHelper.COLUMN_MCC, databaseHelper.COLUMN_LAC };
-            int[] to = new int[] { R.id.tv_mcc, R.id.tv_mnc };
+            String[] from = new String[] { databaseHelper.COLUMN_TIME, databaseHelper.COLUMN_MCC, databaseHelper.COLUMN_MNC,
+                    databaseHelper.COLUMN_CELL_SIZE, databaseHelper.COLUMN_WIFI_SIZE, databaseHelper.COLUMN_CELL_ID,
+                    databaseHelper.COLUMN_LAC,databaseHelper.COLUMN_SIGNAL_STRENGTH,
+                    databaseHelper.COLUMN_CELL_INFO, databaseHelper.COLUMN_WIFI_INFO,
+                    databaseHelper.COLUMN_RADIO_TYPE};
+            int[] to = new int[] { R.id.tv_time,R.id.tv_mcc, R.id.tv_mnc,R.id.tv_cell_size,R.id.tv_wifi_size,
+                    R.id.tv_cell_id,R.id.tv_lac,R.id.tv_signal_strength,R.id.tv_cell_info,
+                    R.id.tv_wifi_info,R.id.tv_radio_type};
 
             mCursorAd = new SimpleCursorAdapter(this, R.layout.item_grid_view, mCursor, from, to, 0);
 

@@ -164,14 +164,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             collectWifiInfo();
             collectCellInfo();
             logi();
-            PhoneState phoneState = new PhoneState();
-            phoneState.setMnc(wifiInfos.size()+"");
-            lastSendDataTime = System.currentTimeMillis();
-            phoneState.setMcc(formatter.format(lastSendDataTime));
-            phoneState.setLac_0(wifiInfos.size());
 
-            DatabaseHelper databaseHelper = new DatabaseHelper(context);
-            databaseHelper.addUser(phoneState);
             try {
                 Thread.sleep(COLLECTION_TIMEOUT);
             } catch (InterruptedException ie) {}
@@ -181,6 +174,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         String message ="cellId: "+cellId+"\n" +
                 "lac: "+lac+"\n" +
                 "radioType: "+radioType+"\n" +
+                "radioType: "+cellInfos.size()+"\n" +
                 "networkType: "+networkType+"\n"+
                 "mcc: "+mcc+"\n"+
                 "mnc: "+mnc+"\n"+
@@ -191,8 +185,6 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
                 "cellSize: "+cellSize+"\n"+
                 "wifiInfos.size: "+wifiInfos.size()+"\n"+
                 "mac[0]: "+wifiInfos.get(0).mac+"\n"+
-
-
                 "signalStrength[0]: "+wifiInfos.get(0).signalStrength+"\n";
 
         Log.i("Cell", message);
@@ -309,6 +301,7 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
             }
             xml.append("</wifipool>");
             sendToServer(xml.toString());
+
             lastSendDataTime = System.currentTimeMillis();
             wifipoolChunks.clear();
         }
@@ -439,7 +432,9 @@ public class WifiAndCellCollector extends PhoneStateListener implements Runnable
         }
 
         xml.append("</ya_lbs_request>");
+        Log.i("xml", "generateRequestLbsXml: "+xml);
         return xml.toString();
+
     }
     
     private synchronized void generateAndAddWifiPoolChunk() {

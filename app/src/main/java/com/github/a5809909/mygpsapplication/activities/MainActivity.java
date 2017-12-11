@@ -96,9 +96,9 @@ public class MainActivity extends Activity {
 
         @Override
         protected LbsInfo doInBackground(Void... params) {
-            wifiAndCellCollector.startCollect();
+
             LbsInfo lbsInfo = wifiAndCellCollector.requestMyLocation();
-            wifiAndCellCollector.startCollect();
+           // wifiAndCellCollector.stopCollect();
             return lbsInfo;
         }
 
@@ -157,7 +157,7 @@ public class MainActivity extends Activity {
     protected void onStart() {
         super.onStart();
         startService(new Intent(MainActivity.this, LogService.class));
-       // wifiAndCellCollector.startCollect();
+        wifiAndCellCollector.startCollect();
     }
 
 
@@ -172,7 +172,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-       //   wifiAndCellCollector.stopCollect();
+          wifiAndCellCollector.stopCollect();
 }
 
 }

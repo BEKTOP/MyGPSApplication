@@ -3,7 +3,6 @@ package com.github.a5809909.mygpsapplication.Services;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -47,7 +46,7 @@ public class LogService extends IntentService {
     public static final String CDMA = "cdma";
     private static final Class[] emptyParamDesc = new Class[]{};
     private static final Object[] emptyParam = new Object[]{};
-    private static final long COLLECTION_TIMEOUT = 10000;
+    private static final long COLLECTION_TIMEOUT = 20000;
     private static final long WIFI_SCAN_TIMEOUT = 30000;
     private static final long GPS_SCAN_TIMEOUT = 2000;
     private static final long GPS_OLD = 3000;               // если со времени фикса прошло больше времени, то данные считаются устаревшие
@@ -62,14 +61,14 @@ public class LogService extends IntentService {
     private String mcc;
     private String mnc;
     private List<CellInfo> cellInfos;
-    private int cellId, lac, signalStrength;
+
 
     private WifiManager wifi;
     private long lastWifiScanTime;
     private List<LogService.WifiInfo> wifiInfos;
+    private StringBuilder cellStr;
+    private StringBuilder wifiStr;
 
-    private volatile Location lastGpsFix;
-    private volatile long lastGpsFixTime;
     private long lastSendDataTime;
 
     private String manufacturer;
@@ -95,8 +94,9 @@ public class LogService extends IntentService {
         networkTypeStr.put(TelephonyManager.NETWORK_TYPE_UNKNOWN, "UNKNOWN");
     }
 
-    private int cId0 = 0;
-    private int lac0 = 0;
+    private int mCellId_0 = 0;
+    private int mLac_0 = 0;
+    private int signalStrength_0 = 0;
 
 
     public LogService() {
@@ -116,6 +116,7 @@ public class LogService extends IntentService {
 
             tm.getCellLocation();
             cellInfos = new ArrayList<CellInfo>();
+
             if (mccAndMnc != null && mccAndMnc.length() > 3) {
                 mcc = mccAndMnc.substring(0, 3);
                 mnc = mccAndMnc.substring(3);
@@ -150,10 +151,24 @@ public class LogService extends IntentService {
             collectWifiInfo();
             collectCellInfo();
             logi();
+            lastSendDataTime = System.currentTimeMillis();
+            int wifiSize = wifiInfos.size();
+
             PhoneState phoneState = new PhoneState();
-            phoneState.setMnc(wifiInfos.size() + "");
-            phoneState.setMcc(formatter.format(lastSendDataTime));
-            phoneState.setLac_0(wifiInfos.size());
+            phoneState.setTime(formatter.format(lastSendDataTime));
+            phoneState.setMcc(mcc);
+            phoneState.setMnc(mnc);
+            phoneState.setNumberOfCells(cellSize);
+            phoneState.setNumberOfWifi(wifiSize);
+            phoneState.setCellId(mCellId_0);
+            phoneState.setLac(mLac_0);
+            phoneState.setSignalStrength_0(signalStrength_0);
+            phoneState.setCellInfo(cellStr.toString());
+            phoneState.setWifiInfo(wifiStr.toString());
+            phoneState.setRadioType(radioType);
+
+
+
 
             DatabaseHelper databaseHelper = new DatabaseHelper(this);
             databaseHelper.addUser(phoneState);
@@ -170,13 +185,20 @@ public class LogService extends IntentService {
             return;
         }
         GsmCellLocation cellLocation = (GsmCellLocation) tm.getCellLocation();
-        cId0 = cellLocation.getCid();
-        lac0 = cellLocation.getLac();
+        List<android.telephony.CellInfo> signal = tm.getAllCellInfo();
+      // signal.get(0).
 
-        cellInfos.clear();
+        mCellId_0 = cellLocation.getCid();
+        mLac_0 = cellLocation.getLac();
+        cellStr = new StringBuilder(300);
+
+      //  signalStrength_0= cellLocation;
+
+      //  cellInfos.clear();
         List<NeighboringCellInfo> cellList = tm.getNeighboringCellInfo();
         cellSize = cellList.size();
-        Log.i("cs", "collectCellInfo: " + cellSize);
+
+        int i=0;
         for (NeighboringCellInfo cell : cellList) {
             int cellId = cell.getCid();
             int lac = NeighboringCellInfo.UNKNOWN_CID;
@@ -190,6 +212,8 @@ public class LogService extends IntentService {
             }
 
             int signalStrength = cell.getRssi();//since 1.5
+            Log.i("celll2", "signalStrength: "+ signalStrength);
+
             int psc = NeighboringCellInfo.UNKNOWN_CID;
             if (cellId == NeighboringCellInfo.UNKNOWN_CID) {
                 try {
@@ -212,19 +236,32 @@ public class LogService extends IntentService {
                     } else {
                         sSignalStrength = String.valueOf(signalStrength);
                     }
+                    Log.i("celll1", "signalStrength: "+ sSignalStrength);
                 }
 
-                LogService.CellInfo info = new LogService.CellInfo();
-                info.cellId = cellId;
-                info.lac = sLac;
-                info.signalStrength = sSignalStrength;
-                cellInfos.add(info);
+
+               cellStr.append(i+",");
+               i++;
+                cellStr.append(cellId+",");
+                cellStr.append(sLac+",");
+                cellStr.append(sSignalStrength+",");
+                Log.i("Celll", "collectCellInfo: " + cellStr);
+
+//                LogService.CellInfo info = new LogService.CellInfo();
+//                info.cellId = cellId;
+//                info.lac = sLac;
+//                info.signalStrength = sSignalStrength;
+//                cellInfos.add(info);
             }
         }
     }
 
     public void collectWifiInfo() {
+        wifiStr = new StringBuilder(3000);
+
         wifiInfos.clear();
+        int j=0;
+
         if (wifi != null && wifi.isWifiEnabled()) {
             List<ScanResult> wifiNetworks = wifi.getScanResults();
             if (wifiNetworks != null && wifiNetworks.size() > 0) {
@@ -244,6 +281,11 @@ public class LogService extends IntentService {
                     info.ssid = ssid.toString();
                     info.name = Base64.encode(net.SSID.getBytes());
                     wifiInfos.add(info);
+                    wifiStr.append(j+",");
+                    wifiStr.append(wifiInfos.get(j).mac+",");
+                    wifiStr.append(wifiInfos.get(j).signalStrength+",");
+                    j++;
+                    Log.i("wifiS", "collectWifiInfo: "+wifiStr);
                 }
             }
 
@@ -256,6 +298,33 @@ public class LogService extends IntentService {
             }
         }
     }
+
+    public void logi() {
+        String message = "cellId: " + mCellId_0 + "\n" +
+                "lac: " + mLac_0 + "\n" +
+                "radioType: " + radioType + "\n" +
+                "networkType: " + networkType + "\n" +
+                "mcc: " + mcc + "\n" +
+                "mnc: " + mnc + "\n" +
+                "model: " + model + "\n" +
+                "cellStr: " + cellStr + "\n" +
+                "wifiStr: " + wifiStr + "\n" +
+                "lastSendDataTime: " + lastSendDataTime + "\n" +
+                "formatter: " + formatter.format(lastSendDataTime) + "\n" +
+                "cellSize: " + cellSize + "\n" +
+                "wifiInfos.size: " + wifiInfos.size() + "\n" +
+                "mac[0]: " + wifiInfos.get(0).mac + "\n" +
+                "mac[1]: " + wifiInfos.get(1).mac + "\n" +
+
+                "signalStrength[0]: " + wifiInfos.get(0).signalStrength + "\n" +
+                "signalStrength[1]: " + wifiInfos.get(1).signalStrength + "\n";
+
+
+        Log.i("Cell", message);
+
+
+    }
+
 
     private String getRadioType(int networkType) {
         switch (networkType) {
@@ -372,28 +441,5 @@ public class LogService extends IntentService {
     }
 
 
-    public void logi() {
-        String message = "cellId: " + cId0 + "\n" +
-                "lac: " + lac0 + "\n" +
-                "radioType: " + radioType + "\n" +
-                "networkType: " + networkType + "\n" +
-                "mcc: " + mcc + "\n" +
-                "mnc: " + mnc + "\n" +
-                "model: " + model + "\n" +
-                "manufacturer: " + manufacturer + "\n" +
-                "lastSendDataTime: " + lastSendDataTime + "\n" +
-                "formatter: " + formatter.format(lastSendDataTime) + "\n" +
-                "cellSize: " + cellSize + "\n" +
-                "wifiInfos.size: " + wifiInfos.size() + "\n" +
-                "mac[0]: " + wifiInfos.get(0).mac + "\n" +
-                "mac[1]: " + wifiInfos.get(1).mac + "\n" +
 
-                "signalStrength[0]: " + wifiInfos.get(0).signalStrength + "\n" +
-                "signalStrength[1]: " + wifiInfos.get(1).signalStrength + "\n";
-
-
-        Log.i("Cell", message);
-
-
-    }
 }

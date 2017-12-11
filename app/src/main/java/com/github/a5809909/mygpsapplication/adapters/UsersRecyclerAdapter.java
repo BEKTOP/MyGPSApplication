@@ -32,7 +32,7 @@ public class UsersRecyclerAdapter extends RecyclerView.Adapter<UsersRecyclerAdap
 
     @Override
     public void onBindViewHolder(UserViewHolder holder, int position) {
-        holder.textViewName.setText(listUsers.get(position).getLac_0());
+        holder.textViewName.setText(listUsers.get(position).getLac());
         holder.textViewEmail.setText(listUsers.get(position).getMcc());
         holder.textViewPassword.setText(listUsers.get(position).getMnc());
     }
