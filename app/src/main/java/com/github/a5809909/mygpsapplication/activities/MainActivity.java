@@ -1,11 +1,14 @@
 package com.github.a5809909.mygpsapplication.activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -21,6 +24,11 @@ import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
 
 public class MainActivity extends Activity {
 
+    private static final String[] LOCATION_PERMISSIONS = new String[]{
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+    };
+    private static final int REQUEST_LOCATION_PERMISSIONS = 0;
     private MainActivity instance;
     private WifiAndCellCollector wifiAndCellCollector;
     private Button btnDoLbs;
@@ -153,13 +161,38 @@ public class MainActivity extends Activity {
 
     }
 
+    private boolean hasLocationPermission() {
+        int result = ContextCompat
+                .checkSelfPermission(this, LOCATION_PERMISSIONS[0]);
+        return result == PackageManager.PERMISSION_GRANTED;
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
-        startService(new Intent(MainActivity.this, LogService.class));
-        wifiAndCellCollector.startCollect();
+        if (hasLocationPermission()) {
+            startService(new Intent(MainActivity.this, LogService.class));
+            wifiAndCellCollector.startCollect();
+        } else {
+            requestPermissions(LOCATION_PERMISSIONS,
+                    REQUEST_LOCATION_PERMISSIONS);
+        }
+
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_LOCATION_PERMISSIONS:
+                if (hasLocationPermission()) {
+                    startService(new Intent(MainActivity.this, LogService.class));
+                    wifiAndCellCollector.startCollect();
+                }
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
 
 
 

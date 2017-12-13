@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".activities.UsersListActivity"/>
+
         <service android:name=".Services.LogService"/>
         <activity android:name=".activities.DataActivity"/>
         <activity android:name=".activities.MainActivity">
@@ -23,12 +23,14 @@
                 </intent-filter>
             </activity>
         </application>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
         <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
         <uses-permission android:name="android.permission.INTERNET" />
         <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
         <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
-        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
         <uses-permission android:name="android.permission.ACCESS_COARSE_UPDATES"/>
         <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
         <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
