@@ -2,33 +2,44 @@ package com.github.a5809909.mygpsapplication.activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.github.a5809909.mygpsapplication.R;
-import com.github.a5809909.mygpsapplication.Services.LogService;
+import com.github.a5809909.mygpsapplication.Services.LoggerService;
 import com.github.a5809909.mygpsapplication.model.LbsInfo;
 import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 import com.github.a5809909.mygpsapplication.yandexlbs.PhoneStateCollector;
 import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
 
+import java.util.Calendar;
+
 public class MainActivity extends Activity {
+    private static final int LOCATION_PERMISSION_CODE = 855;
+    private static final int PERMISSION_CODE = 8785;
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
     };
     private static final int REQUEST_LOCATION_PERMISSIONS = 0;
+    private static final String TAG = "Logg";
     private MainActivity instance;
     private WifiAndCellCollector wifiAndCellCollector;
     private Button btnDoLbs;
@@ -44,8 +55,20 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-         //  wifiAndCellCollector.startCollect();
         setContentView(R.layout.activity_main);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+            if (isLocationPermissionsAllowed(this)) {
+                startService();
+            } else {
+                requestStoragePermissions(this, LOCATION_PERMISSION_CODE);
+                startService();
+            }
+        } else {
+            startService();
+        }
+
 
         instance = this;
         wifiAndCellCollector = new WifiAndCellCollector(this);
@@ -87,6 +110,37 @@ public class MainActivity extends Activity {
             }
         });
     }
+
+    public static void requestStoragePermissions(Activity activity, int PERMISSION_REQUEST_CODE) {
+        java.lang.String[] perms = {"android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.READ_PHONE_STATE"};
+        ActivityCompat.requestPermissions(activity, perms, PERMISSION_REQUEST_CODE);
+    }
+
+    public static boolean isLocationPermissionsAllowed(Activity activity) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            return activity.checkSelfPermission("android.permission.ACCESS_FINE_LOCATION") == PackageManager.PERMISSION_GRANTED
+                    &&
+                    activity.checkSelfPermission("android.permission.ACCESS_COARSE_LOCATION") == PackageManager.PERMISSION_GRANTED
+                    &&
+                    activity.checkSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED;
+        }
+        return true;
+    }
+
+    public void startService() {
+        Log.d(TAG, "startService() called");
+        Calendar cal = Calendar.getInstance();
+        Intent intent = new Intent(this, LoggerService.class);
+        PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
+        AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(),60 * 1000, pintent);
+    }
+
+
+
+
+
+
 
     public class SimpleAsyncTask extends AsyncTask<Void, Integer, LbsInfo> {
 
@@ -170,29 +224,29 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        if (hasLocationPermission()) {
-            startService(new Intent(MainActivity.this, LogService.class));
-            wifiAndCellCollector.startCollect();
-        } else {
-            requestPermissions(LOCATION_PERMISSIONS,
-                    REQUEST_LOCATION_PERMISSIONS);
-        }
+//        if (hasLocationPermission()) {
+//            startService(new Intent(MainActivity.this, LogService.class));
+//            wifiAndCellCollector.startCollect();
+//        } else {
+//            requestPermissions(LOCATION_PERMISSIONS,
+//                    REQUEST_LOCATION_PERMISSIONS);
+//        }
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                           int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_LOCATION_PERMISSIONS:
-                if (hasLocationPermission()) {
-                    startService(new Intent(MainActivity.this, LogService.class));
-                    wifiAndCellCollector.startCollect();
-                }
-            default:
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//                                           int[] grantResults) {
+//        switch (requestCode) {
+//            case REQUEST_LOCATION_PERMISSIONS:
+//                if (hasLocationPermission()) {
+//                    startService(new Intent(MainActivity.this, LogService.class));
+//                    wifiAndCellCollector.startCollect();
+//                }
+//            default:
+//                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        }
+//    }
 
 
 
@@ -205,7 +259,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-          wifiAndCellCollector.stopCollect();
+    //      wifiAndCellCollector.stopCollect();
 }
 
 }
