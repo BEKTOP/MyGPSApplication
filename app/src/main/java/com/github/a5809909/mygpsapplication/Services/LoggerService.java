@@ -52,8 +52,11 @@ public class LoggerService extends Service {
         @Override
         public void onLocationChanged(Location location) {
             Log.e(TAG, "onLocationChanged: " + location);
+
             lat = String.valueOf(location.getLatitude());
             longitude = String.valueOf(location.getLongitude());
+            Toast.makeText(getApplicationContext(),"lat:"+lat+" longitude:"+longitude,Toast.LENGTH_LONG).show();
+            callGoogleApi();
             // sendData();
             mLastLocation.set(location);
         }
@@ -118,8 +121,8 @@ public class LoggerService extends Service {
         super.onStart(intent, startId);
           Toast.makeText(this, "ServiceClass.onStart()", Toast.LENGTH_LONG).show();
         Log.d("Testing", "Service got started");
-        
-        //TODO Code that runs repeatedly
+
+      //  callGoogleApi();
     }
 
 
@@ -156,7 +159,7 @@ public class LoggerService extends Service {
 
             callGoogleApi();
 
-//                TODO build object of google api and handle response
+
         }
     }
 
