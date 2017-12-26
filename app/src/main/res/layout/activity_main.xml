@@ -17,6 +17,7 @@
             android:id="@+id/btn_do_lbs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:onClick="getLocationClicked"
             android:text="Do request Yandex"
             style="@style/btn_style"
             />
@@ -97,4 +98,6 @@
             android:layout_height="wrap_content"
             />
     </LinearLayout>
+
+
 </LinearLayout>
