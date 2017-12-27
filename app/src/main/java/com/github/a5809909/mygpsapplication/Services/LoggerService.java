@@ -13,13 +13,13 @@ import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.koushikdutta.async.future.FutureCallback;
-import com.koushikdutta.ion.Ion;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+//import com.google.gson.JsonArray;
+//import com.google.gson.JsonObject;
+//import com.koushikdutta.async.future.FutureCallback;
+//import com.koushikdutta.ion.Ion;
+//
+//import org.json.JSONException;
+//import org.json.JSONObject;
 
 public class LoggerService extends Service {
 
@@ -187,74 +187,74 @@ public class LoggerService extends Service {
 
 
         }
-        JsonObject object = new JsonObject();
-        JsonObject jsonArrayObject = new JsonObject();
-        JsonArray jsonArray = new JsonArray();
-
-
-        jsonArrayObject.addProperty("cellId", cid);
-        jsonArrayObject.addProperty("locationAreaCode", lac);
-        jsonArrayObject.addProperty("mobileCountryCode", mcc);
-        jsonArrayObject.addProperty("mobileNetworkCode", mnc);
-
-        jsonArray.add(jsonArrayObject);
-
-        object.add("cellTowers", jsonArray);
-
-        if (jsonArrayObject.toString() != null) {
-            Log.d("codeoServtoString", jsonArrayObject.toString());
-
-        }
-
-
-        try {
-            Ion.with(this)
-                    .load("https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyBnF1iPIWboObGjMSXcLgZ9sPXsB5HPFHk")
-                    .setJsonObjectBody(object)
-                    .asString()
-                    .setCallback(new FutureCallback<String>() {
-                        @Override
-                        public void onCompleted(Exception e, String result) {
-                            if (result != null) {
-                                try {
-                                    JSONObject obj1 = null;
-                                    obj1 = new JSONObject(result);
-                                    String msg = String.valueOf(obj1.get("msg"));
-                                    //   Toast.makeText(MyService.this, msg, Toast.LENGTH_SHORT).show();
-                                } catch (JSONException e1) {
-                                    //    Toast.makeText(MyService.this, e1.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                                Log.d(TAG, result);
-
-                            }
-                            JSONObject obj = null;
-                            try {
-                                obj = new JSONObject(result);
-                            } catch (JSONException e1) {
-                                e1.printStackTrace();
-                            }
-                            try {
-                                JSONObject location = obj.getJSONObject("location");
-                                String latit = location.getString("lat");
-                                String langi = location.getString("lng");
-
-                                Log.d(TAG, latit + "  " + langi);
-
-                               // sendData(latit, langi);
-
-                            } catch (JSONException e1) {
-                                e1.printStackTrace();
-                            }
-
-                        }
-                    });
-
-            Toast.makeText(this, "result called"+longitude+" "+lat, Toast.LENGTH_SHORT).show();
-
-        } catch (Exception e) {
-            //  Toast.makeText(this, "result exceptiom", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "error");
-        }
+//        JsonObject object = new JsonObject();
+//        JsonObject jsonArrayObject = new JsonObject();
+//        JsonArray jsonArray = new JsonArray();
+//
+//
+//        jsonArrayObject.addProperty("cellId", cid);
+//        jsonArrayObject.addProperty("locationAreaCode", lac);
+//        jsonArrayObject.addProperty("mobileCountryCode", mcc);
+//        jsonArrayObject.addProperty("mobileNetworkCode", mnc);
+//
+//        jsonArray.add(jsonArrayObject);
+//
+//        object.add("cellTowers", jsonArray);
+//
+//        if (jsonArrayObject.toString() != null) {
+//            Log.d("codeoServtoString", jsonArrayObject.toString());
+//
+//        }
+//
+//
+//        try {
+//            Ion.with(this)
+//                    .load("https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyBnF1iPIWboObGjMSXcLgZ9sPXsB5HPFHk")
+//                    .setJsonObjectBody(object)
+//                    .asString()
+//                    .setCallback(new FutureCallback<String>() {
+//                        @Override
+//                        public void onCompleted(Exception e, String result) {
+//                            if (result != null) {
+//                                try {
+//                                    JSONObject obj1 = null;
+//                                    obj1 = new JSONObject(result);
+//                                    String msg = String.valueOf(obj1.get("msg"));
+//                                    //   Toast.makeText(MyService.this, msg, Toast.LENGTH_SHORT).show();
+//                                } catch (JSONException e1) {
+//                                    //    Toast.makeText(MyService.this, e1.getMessage(), Toast.LENGTH_SHORT).show();
+//                                }
+//                                Log.d(TAG, result);
+//
+//                            }
+//                            JSONObject obj = null;
+//                            try {
+//                                obj = new JSONObject(result);
+//                            } catch (JSONException e1) {
+//                                e1.printStackTrace();
+//                            }
+//                            try {
+//                                JSONObject location = obj.getJSONObject("location");
+//                                String latit = location.getString("lat");
+//                                String langi = location.getString("lng");
+//
+//                                Log.d(TAG, latit + "  " + langi);
+//
+//                               // sendData(latit, langi);
+//
+//                            } catch (JSONException e1) {
+//                                e1.printStackTrace();
+//                            }
+//
+//                        }
+//                    });
+//
+//            Toast.makeText(this, "result called"+longitude+" "+lat, Toast.LENGTH_SHORT).show();
+//
+//        } catch (Exception e) {
+//            //  Toast.makeText(this, "result exceptiom", Toast.LENGTH_SHORT).show();
+//            Log.d(TAG, "error");
+//        }
 
 
     }
