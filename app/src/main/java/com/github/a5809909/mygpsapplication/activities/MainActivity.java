@@ -32,6 +32,13 @@ import com.github.a5809909.mygpsapplication.model.PhoneState;
 import com.github.a5809909.mygpsapplication.sql.DatabaseHelper;
 import com.github.a5809909.mygpsapplication.yandexlbs.PhoneStateCollector;
 import com.github.a5809909.mygpsapplication.yandexlbs.WifiAndCellCollector;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
@@ -44,7 +51,7 @@ import org.json.JSONObject;
 
 import java.util.Calendar;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnClickListener{
     private static final int LOCATION_PERMISSION_CODE = 855;
     private static final String API_KEY = "AIzaSyDNsRNkiJddjICdCY9fiFw3U6_nziORLC4";
     private static final String[] LOCATION_PERMISSIONS = new String[]{
@@ -54,8 +61,9 @@ public class MainActivity extends Activity {
     private MainActivity instance;
     private static final String TAG = "Main";
     private DatabaseHelper databaseHelper;
-    private Button btnDoLbs;
+    private Button btnDoLbs,btnShowDB,btnShowMap;
     private TextView lbsLatitude, lbsLongtitude, lbsAltitude, lbsPrecision, lbsType;
+    GoogleMap googleMap;
 
 
 
@@ -80,24 +88,49 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         instance = this;
-        btnDoLbs = findViewById(R.id.btn_show_database);
-        btnDoLbs.setOnClickListener(new OnClickListener() {
+        initViews();
 
-            @Override
-            public void onClick(View v) {
-                Intent intentRegister = new Intent(getApplicationContext(), DataActivity.class);
-                startActivity(intentRegister);
-            }
-        });
-        btnDoLbs = findViewById(R.id.btn_send_gps_com);
-        btnDoLbs.setOnClickListener(new OnClickListener() {
 
-            @Override
-            public void onClick(View v) {
-                //   phoneStateCollector.logi();
-            }
-        });
-//        btnDoLbs = findViewById(R.id.btn_do_lbs);
+
+
+//        btnShowDB.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intentRegister = new Intent(getApplicationContext(), DataActivity.class);
+//                startActivity(intentRegister);
+//            }
+//        });
+//
+//        btnShowMap.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intentRegister = new Intent(getApplicationContext(), DataActivity.class);
+//                startActivity(intentRegister);
+//
+//
+//                //   phoneStateCollector.logi();
+//                String latStr=lbsAltitude.getText().toString();
+//                double lat=Double.valueOf(latStr);
+//                String lngStr=lbsLongtitude.getText().toString();
+//                double lng=Double.valueOf(lngStr);
+//                showMap(lat,lng);
+//
+//            }
+//        });
+//        btnDoLbs = findViewById(R.id.btn_auth_gps_com);
+//        btnDoLbs.setOnClickListener(new OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+////                PhoneStateAsyncTask mPhoneStateAsyncTask = new PhoneStateAsyncTask();
+////                mPhoneStateAsyncTask.execute();
+//            }
+//        });
+//
+//
+
+
+
 //        btnDoLbs.setOnClickListener(new OnClickListener() {
 //
 //            @Override
@@ -107,15 +140,31 @@ public class MainActivity extends Activity {
 ////                mAsyncTask.execute();
 //            }
 //        });
-        btnDoLbs = findViewById(R.id.btn_auth_gps_com);
-        btnDoLbs.setOnClickListener(new OnClickListener() {
 
-            @Override
-            public void onClick(View v) {
-//                PhoneStateAsyncTask mPhoneStateAsyncTask = new PhoneStateAsyncTask();
-//                mPhoneStateAsyncTask.execute();
-            }
-        });
+
+
+    }
+
+
+    @Override
+    public void onClick(View v){
+        switch (v.getId()) {
+            case R.id.btn_do_lbs:
+                getLocationClicked(v);
+
+                break;
+            case R.id.btn_show_database:
+                Intent intentDataBase = new Intent(getApplicationContext(), DataActivity.class);
+                startActivity(intentDataBase);
+
+                break;
+            case R.id.btn_maps:
+                Intent intentMap = new Intent(getApplicationContext(), MapActivity.class);
+                startActivity(intentMap);
+
+                break;
+
+        }
     }
 
     public void startService() {
@@ -240,16 +289,12 @@ public class MainActivity extends Activity {
                     JSONObject jsonResult = new JSONObject(result);
                     JSONObject location = jsonResult.getJSONObject("location");
                     String lat, lng;
+
                     lat = location.getString("lat");
                     lng = location.getString("lng");
+                    lbsAltitude.setText(lat);
+                    lbsLongtitude.setText(lng);
 
-                    if ((lat != null) &&
-                            (!lat.isEmpty()) &&
-                            (lng != null) &&
-                            (!lng.isEmpty())) {
-                        Log.i(TAG, "Lat:"+lat+", Long:"+lng);
-                        instance.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=" + lat + "," + lng + "&iwloc=A")));
-                    }
                 } catch (Exception e) {
                     Toast.makeText(instance, "Exception parsing response: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     e.printStackTrace();
@@ -258,7 +303,6 @@ public class MainActivity extends Activity {
         }
 
     }
-
 
 
 
@@ -323,6 +367,12 @@ public class MainActivity extends Activity {
         lbsAltitude = findViewById(R.id.lbs_altitude);
         lbsPrecision = findViewById(R.id.lbs_precision);
         lbsType = findViewById(R.id.lbs_type);
+        btnShowDB = findViewById(R.id.btn_show_database);
+        btnShowMap = findViewById(R.id.btn_maps);
+        btnDoLbs = findViewById(R.id.btn_do_lbs);
+        btnDoLbs.setOnClickListener(this);
+        btnShowMap.setOnClickListener(this);
+        btnShowDB.setOnClickListener(this);
     }
 
     private void saveInSql(PhoneState result) {
